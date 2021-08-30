@@ -15,8 +15,8 @@ class Config(object):
     train_list = '/data/Datasets/webface/train_data_13938.txt'
     val_list = '/data/Datasets/webface/val_data_13938.txt'
 
-    test_root = '/data1/Datasets/anti-spoofing/test/data_align_256'
-    test_list = 'test.txt'
+    test_root = '/data1/Datasets/anti-spoofing/sandbox/data_align_256'
+    test_list = 'sandbox.txt'
 
     lfw_root = '/data/Datasets/lfw/lfw-align-128'
     lfw_test_list = '/data/Datasets/lfw/lfw_test_pair.txt'

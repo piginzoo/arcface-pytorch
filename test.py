@@ -11,8 +11,10 @@ from models import *
 import torch
 import numpy as np
 import time
-from config import Config
+from config.config import Config
 from torch.nn import DataParallel
+
+from models.resnet import resnet_face18, resnet34, resnet50
 
 
 def get_lfw_list(pair_list):

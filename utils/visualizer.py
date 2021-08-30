@@ -6,6 +6,9 @@ from sklearn.metrics import roc_curve
 
 
 class Visualizer(object):
+    """
+    使用visdom可视化，visdom是PyTorch的远程可视化神器：https://zhuanlan.zhihu.com/p/34692106
+    """
 
     def __init__(self, env='default', **kwargs):
         self.vis = visdom.Visdom(env=env, **kwargs)

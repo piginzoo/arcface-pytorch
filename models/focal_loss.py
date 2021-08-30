@@ -10,6 +10,13 @@ import torch.nn as nn
 
 
 class FocalLoss(nn.Module):
+    """
+    https://zhuanlan.zhihu.com/p/49981234
+    Focal Loss解决2个问题：
+    1、解决样本不均衡问题，用alpha来平衡
+    2、解决样本难分/易分样本的调节，用gamma来平衡
+    FL(p)=-alpha (1-p)^gamma * log(p)
+    """
 
     def __init__(self, gamma=0, eps=1e-7):
         super(FocalLoss, self).__init__()

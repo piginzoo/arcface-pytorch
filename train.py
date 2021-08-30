@@ -1,20 +1,22 @@
 from __future__ import print_function
+
 import os
-from data import Dataset
-import torch
-from torch.utils import data
-import torch.nn.functional as F
-from models import *
-import torchvision
-from utils import Visualizer, view_model
-import torch
-import numpy as np
-import random
 import time
-from config import Config
+
+import numpy as np
+import torch
+from torch import nn  # StepLR是调整学习率的
 from torch.nn import DataParallel
 from torch.optim.lr_scheduler import StepLR
-from test import *
+from torch.utils import data
+
+from config.config import Config
+from data.dataset import Dataset
+from models.focal_loss import FocalLoss
+from models.metrics import AddMarginProduct, ArcMarginProduct, SphereProduct
+from models.resnet import resnet_face18, resnet34, resnet50
+from test import lfw_test, get_lfw_list
+from utils.visualizer import Visualizer
 
 
 def save_model(model, save_path, name, iter_cnt):
@@ -28,7 +30,7 @@ if __name__ == '__main__':
     opt = Config()
     if opt.display:
         visualizer = Visualizer()
-    device = torch.device("cuda")
+    device = torch.device("cuda")  # torch.device代表将torch.Tensor分配到的设备的对象
 
     train_dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
     trainloader = data.DataLoader(train_dataset,
@@ -36,7 +38,7 @@ if __name__ == '__main__':
                                   shuffle=True,
                                   num_workers=opt.num_workers)
 
-    identity_list = get_lfw_list(opt.lfw_test_list)
+    identity_list = get_lfw_list(opt.lfw_test_list)  # 我理解是加载测试集，为何不用dataset+dataloader?
     img_paths = [os.path.join(opt.lfw_root, each) for each in identity_list]
 
     print('{} train iters per epoch:'.format(len(trainloader)))
@@ -56,6 +58,8 @@ if __name__ == '__main__':
     if opt.metric == 'add_margin':
         metric_fc = AddMarginProduct(512, opt.num_classes, s=30, m=0.35)
     elif opt.metric == 'arc_margin':
+        # easy_margin = False
+        # 你注意这个细节，这个是一个网络中的"层";需要传入num_classes，也就是说，多少个人的人脸就是多少类
         metric_fc = ArcMarginProduct(512, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin)
     elif opt.metric == 'sphere':
         metric_fc = SphereProduct(512, opt.num_classes, m=4)
@@ -63,11 +67,12 @@ if __name__ == '__main__':
         metric_fc = nn.Linear(512, opt.num_classes)
 
     # view_model(model, opt.input_shape)
-    print(model)
+    # print(model)
     model.to(device)
     model = DataParallel(model)
-    metric_fc.to(device)
-    metric_fc = DataParallel(metric_fc)
+    # 为何loss，也需要用这么操作一下？
+    metric_fc.to(device)  # 用xxx设备
+    metric_fc = DataParallel(metric_fc)  # 走并行模式
 
     if opt.optimizer == 'sgd':
         optimizer = torch.optim.SGD([{'params': model.parameters()}, {'params': metric_fc.parameters()}],
@@ -75,11 +80,12 @@ if __name__ == '__main__':
     else:
         optimizer = torch.optim.Adam([{'params': model.parameters()}, {'params': metric_fc.parameters()}],
                                      lr=opt.lr, weight_decay=opt.weight_decay)
+    # StepLR是调整学习率的
     scheduler = StepLR(optimizer, step_size=opt.lr_step, gamma=0.1)
 
     start = time.time()
     for i in range(opt.max_epoch):
-        scheduler.step()
+        scheduler.step()  # ？？？
 
         model.train()
         for ii, data in enumerate(trainloader):
@@ -89,7 +95,7 @@ if __name__ == '__main__':
             feature = model(data_input)
             output = metric_fc(feature, label)
             loss = criterion(output, label)
-            optimizer.zero_grad()
+            optimizer.zero_grad()  # 先把所有的梯度都清零？为何？
             loss.backward()
             optimizer.step()
 
@@ -104,7 +110,8 @@ if __name__ == '__main__':
                 acc = np.mean((output == label).astype(int))
                 speed = opt.print_freq / (time.time() - start)
                 time_str = time.asctime(time.localtime(time.time()))
-                print('{} train epoch {} iter {} {} iters/s loss {} acc {}'.format(time_str, i, ii, speed, loss.item(), acc))
+                print('{} train epoch {} iter {} {} iters/s loss {} acc {}'.format(time_str, i, ii, speed, loss.item(),
+                                                                                   acc))
                 if opt.display:
                     visualizer.display_current_results(iters, loss.item(), name='train_loss')
                     visualizer.display_current_results(iters, acc, name='train_acc')
