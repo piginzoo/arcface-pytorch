@@ -5,15 +5,16 @@ Created on 18-5-30 下午4:55
 @author: ronghuaiyang
 """
 from __future__ import print_function
+
 import os
-import cv2
-from models import *
-import torch
-import numpy as np
 import time
-from config.config import Config
+
+import cv2
+import numpy as np
+import torch
 from torch.nn import DataParallel
 
+from config.config import Config
 from models.resnet import resnet_face18, resnet34, resnet50
 
 
@@ -33,7 +34,8 @@ def get_lfw_list(pair_list):
 
 
 def load_image(img_path):
-    image = cv2.imread(img_path, 0)
+    image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+    image = cv2.resize(image,(128,128))
     if image is None:
         return None
     image = np.dstack((image, np.fliplr(image)))
@@ -57,6 +59,7 @@ def get_featurs(model, test_list, batch_size=10):
         if images is None:
             images = image
         else:
+            # concat到一起，是为了凑一个batch么？
             images = np.concatenate((images, image), axis=0)
 
         if images.shape[0] % batch_size == 0 or i == len(test_list) - 1:
@@ -126,8 +129,12 @@ def test_performance(fe_dict, pair_list):
     labels = []
     for pair in pairs:
         splits = pair.split()
-        fe_1 = fe_dict[splits[0]]
-        fe_2 = fe_dict[splits[1]]
+        fe_1 = fe_dict.get(splits[0], None)
+        fe_2 = fe_dict.get(splits[1], None)
+
+        if fe_1 is None or fe_2 is None:
+            continue
+
         label = int(splits[2])
         sim = cosin_metric(fe_1, fe_2)
 
@@ -138,14 +145,14 @@ def test_performance(fe_dict, pair_list):
     return acc, th
 
 
-def lfw_test(model, img_paths, identity_list, compair_list, batch_size):
+def lfw_test(model, img_paths, identity_list, pair_list_path, batch_size):
     s = time.time()
     features, cnt = get_featurs(model, img_paths, batch_size=batch_size)
     print(features.shape)
     t = time.time() - s
     print('total time is {}, average time is {}'.format(t, t / cnt))
     fe_dict = get_feature_dict(identity_list, features)
-    acc, th = test_performance(fe_dict, compair_list)
+    acc, th = test_performance(fe_dict, pair_list_path)
     print('lfw face verification accuracy: ', acc, 'threshold: ', th)
     return acc
 
@@ -170,7 +177,3 @@ if __name__ == '__main__':
 
     model.eval()
     lfw_test(model, img_paths, identity_list, opt.lfw_test_list, opt.test_batch_size)
-
-
-
-

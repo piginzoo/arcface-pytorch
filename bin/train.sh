@@ -12,13 +12,11 @@ then
     CUDA_VISIBLE_DEVICES=3 \
     python train.py \
     --name arcface \
-    --batch 1 \
-    --epochs 1
+    --mode debug
 else
   echo "生产模式（重新训练）"
   CUDA_VISIBLE_DEVICES=1 \
     python train.py \
     --name captcha \
-    --batch 32 \
-    --epochs 1000 >> ./logs/console.${Date}.log 2>&1 &
+    --mode normal>> ./logs/console.${Date}.log 2>&1 &
 fi

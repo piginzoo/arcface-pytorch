@@ -1,3 +1,6 @@
+import sys
+
+
 class Config(object):
     env = 'default'
     backbone = 'resnet18'
@@ -16,23 +19,21 @@ class Config(object):
     train_root = 'data/train/Img/img_align_celeba/'
     train_list = 'data/train/Anno/identity_CelebA.txt'
 
-    val_list = '/data/Datasets/webface/val_data_13938.txt'
-
-    test_root = '/data1/Datasets/anti-spoofing/sandbox/data_align_256'
-    test_list = 'sandbox.txt'
-
     # lfw_root = '/data/Datasets/lfw/lfw-align-128'
     # lfw_test_list = '/data/Datasets/lfw/lfw_test_pair.txt'
-    lfw_root = 'data/val/images'
-    lfw_test_list = 'data/val/lfw_test_pair.txt'
 
     checkpoints_path = 'checkpoints'
     load_model_path = 'models/resnet18.pth'
-    test_model_path = 'checkpoints/resnet18_110.pth'
     save_interval = 10
 
     train_batch_size = 16  # batch size
+
+    lfw_root = 'data/val/images'
+    lfw_test_list = 'data/val/lfw_test_pair.txt'
+    test_model_path = 'checkpoints/resnet18_110.pth'
     test_batch_size = 60
+    test_size = sys.maxsize
+
 
     input_shape = (1, 128, 128)
 
@@ -51,3 +52,4 @@ class Config(object):
     lr_step = 10
     lr_decay = 0.95  # when val_loss increase, lr = lr*lr_decay
     weight_decay = 5e-4
+

@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 def save_model(model, save_path, name, iter_cnt):
     save_name = os.path.join(save_path, name + '_' + str(iter_cnt) + '.pth')
     torch.save(model.state_dict(), save_name)
+    logger.info("模型保存到：%s",save_name)
     return save_name
 
 
@@ -34,8 +35,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", default=None, type=str)
-    parser.add_argument("--epochs", default=1, type=int)
-    parser.add_argument("--batch", default=1, type=int)
+    parser.add_argument("--mode", default="normal", type=str)
     args = parser.parse_args()
 
     logger.info("参数配置：%r",args)
@@ -43,6 +43,14 @@ if __name__ == '__main__':
     init_log()
 
     opt = Config()
+    if args.mode == "debug":
+        logger.info("启动调试模式 >>>>> ")
+        opt.max_epoch = 1
+        opt.test_batch_size = 1
+        opt.test_batch_size = 1
+        opt.test_size = 1
+
+
     if opt.display:
         visualizer = Visualizer()
 
@@ -51,8 +59,7 @@ if __name__ == '__main__':
 
     train_dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
     trainloader = data.DataLoader(train_dataset,
-                                  # batch_size=opt.train_batch_size,
-                                  batch_size=args.batch,
+                                  batch_size=opt.train_batch_size,
                                   shuffle=True,
                                   num_workers=opt.num_workers)
 
@@ -101,8 +108,7 @@ if __name__ == '__main__':
     scheduler = StepLR(optimizer, step_size=opt.lr_step, gamma=0.1)
 
     start = time.time()
-    #for i in range(opt.max_epoch):
-    for i in range(args.epochs):
+    for i in range(opt.max_epoch):
         scheduler.step()  # ？？？
 
         model.train()
@@ -128,7 +134,7 @@ if __name__ == '__main__':
                 acc = np.mean((output == label).astype(int))
                 speed = opt.print_freq / (time.time() - start)
                 time_str = time.asctime(time.localtime(time.time()))
-                print('{} train epoch {} iter {} {} iters/s loss {} acc {}'.format(time_str, i, ii, speed, loss.item(),
+                logger.info('{} train epoch {} iter {} {} iters/s loss {} acc {}'.format(time_str, i, ii, speed, loss.item(),
                                                                                    acc))
                 if opt.display:
                     visualizer.display_current_results(iters, loss.item(), name='train_loss')
@@ -140,6 +146,6 @@ if __name__ == '__main__':
             save_model(model, opt.checkpoints_path, opt.backbone, i)
 
         model.eval()
-        acc = lfw_test(model, img_paths, identity_list, opt.lfw_test_list, opt.test_batch_size)
+        acc = lfw_test(model, img_paths[:opt.test_size], identity_list[:opt.test_size], opt.lfw_test_list, opt.test_batch_size)
         if opt.display:
             visualizer.display_current_results(iters, acc, name='test_acc')
