@@ -11,8 +11,11 @@ class Config(object):
     display = False
     finetune = False
 
-    train_root = '/data/Datasets/webface/CASIA-maxpy-clean-crop-144/'
-    train_list = '/data/Datasets/webface/train_data_13938.txt'
+    # train_root = '/data/Datasets/webface/CASIA-maxpy-clean-crop-144/'
+    # train_list = '/data/Datasets/webface/train_data_13938.txt'
+    train_root = 'data/Img'
+    train_list = 'data/Anno/identity_CelebA.txt'
+
     val_list = '/data/Datasets/webface/val_data_13938.txt'
 
     test_root = '/data1/Datasets/anti-spoofing/sandbox/data_align_256'

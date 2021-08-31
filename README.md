@@ -1,7 +1,9 @@
 # 人脸比较-arcface
 
 # 数据
-旧代码用的是lfw数据集，[参考](http://home.ustc.edu.cn/~yqli1995/2019/09/28/lfw/)
+旧代码用的是
+用[CASIA-webface](https://paperswithcode.com/dataset/casia-webface)做训练集，
+用lfw数据集做验证集，算acc[参考](http://home.ustc.edu.cn/~yqli1995/2019/09/28/lfw/)
 ```
 ➜  lfw ll images/Aaron_Peirsol
 total 136

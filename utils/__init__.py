@@ -1,2 +1,2 @@
-from visualizer import *
-from view_model import *
+from utils.visualizer import *
+from utils.view_model import *

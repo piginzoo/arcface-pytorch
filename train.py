@@ -11,7 +11,7 @@ from torch.optim.lr_scheduler import StepLR
 from torch.utils import data
 
 from config.config import Config
-from data.dataset import Dataset
+from utils.dataset import Dataset
 from models.focal_loss import FocalLoss
 from models.metrics import AddMarginProduct, ArcMarginProduct, SphereProduct
 from models.resnet import resnet_face18, resnet34, resnet50
