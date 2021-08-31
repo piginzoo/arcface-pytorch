@@ -63,7 +63,7 @@ def get_featurs(model, test_list, batch_size=10):
             cnt += 1
 
             data = torch.from_numpy(images)
-            data = data.to(torch.device("cuda"))
+            # data = data.to(torch.device("cuda"))
             output = model(data)
             output = output.data.cpu().numpy()
 

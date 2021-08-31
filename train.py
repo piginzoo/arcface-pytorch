@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import argparse
+import logging
 import os
 import time
 
@@ -11,12 +13,15 @@ from torch.optim.lr_scheduler import StepLR
 from torch.utils import data
 
 from config.config import Config
-from utils.dataset import Dataset
 from models.focal_loss import FocalLoss
 from models.metrics import AddMarginProduct, ArcMarginProduct, SphereProduct
 from models.resnet import resnet_face18, resnet34, resnet50
 from test import lfw_test, get_lfw_list
+from utils import init_log
+from utils.dataset import Dataset
 from utils.visualizer import Visualizer
+
+logger = logging.getLogger(__name__)
 
 
 def save_model(model, save_path, name, iter_cnt):
@@ -27,14 +32,27 @@ def save_model(model, save_path, name, iter_cnt):
 
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--name", default=None, type=str)
+    parser.add_argument("--epochs", default=1, type=int)
+    parser.add_argument("--batch", default=1, type=int)
+    args = parser.parse_args()
+
+    logger.info("参数配置：%r",args)
+
+    init_log()
+
     opt = Config()
     if opt.display:
         visualizer = Visualizer()
-    device = torch.device("cuda")  # torch.device代表将torch.Tensor分配到的设备的对象
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
+    logger.info("训练使用:%r", device)
 
     train_dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
     trainloader = data.DataLoader(train_dataset,
-                                  batch_size=opt.train_batch_size,
+                                  # batch_size=opt.train_batch_size,
+                                  batch_size=args.batch,
                                   shuffle=True,
                                   num_workers=opt.num_workers)
 
@@ -67,7 +85,6 @@ if __name__ == '__main__':
         metric_fc = nn.Linear(512, opt.num_classes)
 
     # view_model(model, opt.input_shape)
-    # print(model)
     model.to(device)
     model = DataParallel(model)
     # 为何loss，也需要用这么操作一下？
@@ -84,7 +101,8 @@ if __name__ == '__main__':
     scheduler = StepLR(optimizer, step_size=opt.lr_step, gamma=0.1)
 
     start = time.time()
-    for i in range(opt.max_epoch):
+    #for i in range(opt.max_epoch):
+    for i in range(args.epochs):
         scheduler.step()  # ？？？
 
         model.train()

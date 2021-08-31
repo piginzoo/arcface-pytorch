@@ -1,5 +1,5 @@
 import os
-
+import logging
 import cv2
 import numpy as np
 import torchvision
@@ -7,6 +7,7 @@ from PIL import Image
 from torch.utils import data
 from torchvision import transforms as T # PyTorch框架中有一个非常重要且好用的包
 
+logger = logging.getLogger(__name__)
 
 class Dataset(data.Dataset):
     """
@@ -23,10 +24,20 @@ class Dataset(data.Dataset):
         self.input_shape = input_shape
 
         with open(os.path.join(data_list_file), 'r') as fd:
-            imgs = fd.readlines()
+            img_labels = fd.readlines()
 
-        imgs = [os.path.join(root, img[:-1]) for img in imgs]
-        self.imgs = np.random.permutation(imgs) # 打乱顺序
+        img_labels = [os.path.join(root, img[:-1]) for img in img_labels]
+
+        filtered_imgs = []
+        for __img_path_label in img_labels:
+            __img_path, label = __img_path_label.split()
+            if not os.path.exists(__img_path):
+                # logger.debug("%s 不存在",__img_path)
+                continue
+            filtered_imgs.append([__img_path,label])
+        logger.debug("过滤后，共加载图片%d张" , len(filtered_imgs))
+
+        self.imgs = np.random.permutation(filtered_imgs) # 打乱顺序
 
         # normalize = T.Normalize(mean=[0.5, 0.5, 0.5],
         #                         std=[0.5, 0.5, 0.5])
@@ -49,13 +60,11 @@ class Dataset(data.Dataset):
             ])
 
     def __getitem__(self, index):
-        sample = self.imgs[index] # 这里面是图片路径
-        splits = sample.split()
-        img_path = splits[0]
+        img_path,label = self.imgs[index] # 这里面是图片路径
         data = Image.open(img_path) # 加载图片
         data = data.convert('L') # a greyscale ("L") ，L是灰度图像
         data = self.transforms(data)
-        label = np.int32(splits[1])
+        label = np.int32(label)
         return data.float(), label
 
     def __len__(self):

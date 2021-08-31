@@ -3,3 +3,6 @@
 *.pth
 .idea/
 data/
+logs/
+logs
+checkpoints/

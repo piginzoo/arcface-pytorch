@@ -13,16 +13,18 @@ class Config(object):
 
     # train_root = '/data/Datasets/webface/CASIA-maxpy-clean-crop-144/'
     # train_list = '/data/Datasets/webface/train_data_13938.txt'
-    train_root = 'data/Img'
-    train_list = 'data/Anno/identity_CelebA.txt'
+    train_root = 'data/train/Img/img_align_celeba/'
+    train_list = 'data/train/Anno/identity_CelebA.txt'
 
     val_list = '/data/Datasets/webface/val_data_13938.txt'
 
     test_root = '/data1/Datasets/anti-spoofing/sandbox/data_align_256'
     test_list = 'sandbox.txt'
 
-    lfw_root = '/data/Datasets/lfw/lfw-align-128'
-    lfw_test_list = '/data/Datasets/lfw/lfw_test_pair.txt'
+    # lfw_root = '/data/Datasets/lfw/lfw-align-128'
+    # lfw_test_list = '/data/Datasets/lfw/lfw_test_pair.txt'
+    lfw_root = 'data/val/images'
+    lfw_test_list = 'data/val/lfw_test_pair.txt'
 
     checkpoints_path = 'checkpoints'
     load_model_path = 'models/resnet18.pth'
@@ -36,7 +38,7 @@ class Config(object):
 
     optimizer = 'sgd'
 
-    use_gpu = True  # use GPU or not
+    use_gpu = False  # use GPU or not
     gpu_id = '0, 1'
     num_workers = 4  # how many workers for loading data
     print_freq = 100  # print info every N batch
