@@ -44,7 +44,7 @@ class EarlyStop():
 
         if decision == EarlyStop.BEST:
             logger.info("新Value值[%f]大于过去最好的Value值，早停计数器重置，并保存模型", value)
-            saver(args)
+            saver(*args)
             return False
 
         if decision == EarlyStop.STOP:

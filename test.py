@@ -6,40 +6,28 @@ Created on 18-5-30 下午4:55
 """
 from __future__ import print_function
 
+import logging
 import os
 import time
-import logging
+
 import cv2
 import numpy as np
 import torch
-from torch.nn import DataParallel
-
-from config.config import Config
-from models.resnet import resnet_face18, resnet34, resnet50
-
 
 logger = logging.getLogger(__name__)
 
-def get_lfw_list(pair_list):
-    with open(pair_list, 'r') as fd:
-        pairs = fd.readlines()
-    data_list = []
-    for pair in pairs:
-        splits = pair.split()
 
-        if splits[0] not in data_list:
-            data_list.append(splits[0])
-
-        if splits[1] not in data_list:
-            data_list.append(splits[1])
-    return data_list
-
-
-def load_image(img_path):
-    image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-    image = cv2.resize(image,(128,128))
-    if image is None:
+def load_image(image_path):
+    if not os.path.exists(image_path):
+        logger.warning("图片路径不存在：%s", image_path)
         return None
+
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if image is None:
+        logger.warning("图片加载失败：%s", image_path)
+        return None
+
+    image = cv2.resize(image, (128, 128))
     image = np.dstack((image, np.fliplr(image)))
     image = image.transpose((2, 0, 1))
     image = image[:, np.newaxis, :, :]
@@ -49,42 +37,20 @@ def load_image(img_path):
     return image
 
 
-def get_featurs(model, test_list, batch_size=10):
-    images = None
-    features = None
-    cnt = 0
-    for i, img_path in enumerate(test_list):
-        image = load_image(img_path)
-        if image is None:
-            print('read {} error'.format(img_path))
+def calculate_features(model, image_paths):
+    image_feature_dict = {}
+    for i, image_path in enumerate(image_paths):
+        name = os.path.split(image_path)[1]
+        image = load_image(image_path)
+        if image is None: continue
 
-        if images is None:
-            images = image
-        else:
-            # concat到一起，是为了凑一个batch么？
-            images = np.concatenate((images, image), axis=0)
-
-        if images.shape[0] % batch_size == 0 or i == len(test_list) - 1:
-            cnt += 1
-
-            data = torch.from_numpy(images)
-            # data = data.to(torch.device("cuda"))
-            output = model(data)
-            output = output.data.cpu().numpy()
-
-            fe_1 = output[::2]
-            fe_2 = output[1::2]
-            feature = np.hstack((fe_1, fe_2))
-            # print(feature.shape)
-
-            if features is None:
-                features = feature
-            else:
-                features = np.vstack((features, feature))
-
-            images = None
-
-    return features, cnt
+        # data = torch.from_numpy(np.array([image]))
+        data = torch.from_numpy(image)
+        # data = data.to(torch.device("cuda"))
+        feature = model(data)[0]
+        feature = feature.data.cpu().numpy()
+        image_feature_dict[name] = feature
+    return image_feature_dict
 
 
 def load_model(model, model_path):
@@ -95,19 +61,18 @@ def load_model(model, model_path):
     model.load_state_dict(model_dict)
 
 
-def get_feature_dict(test_list, features):
-    fe_dict = {}
-    for i, each in enumerate(test_list):
-        # key = each.split('/')[1]
-        fe_dict[each] = features[i]
-    return fe_dict
-
-
 def cosin_metric(x1, x2):
     return np.dot(x1, x2) / (np.linalg.norm(x1) * np.linalg.norm(x2))
 
 
 def cal_accuracy(y_score, y_true):
+    """
+    从一堆的 脸脸对，得到cos差异值，
+    然后用每一个cos差异值当阈值，来算正确率，
+    对应最好的正确率的那个阈值，当做最好的阈值。
+    这个算法有点意思。
+    """
+
     y_score = np.asarray(y_score)
     y_true = np.asarray(y_true)
     best_acc = 0
@@ -123,69 +88,64 @@ def cal_accuracy(y_score, y_true):
     return (best_acc, best_th)
 
 
-def test_performance(fe_dict, pair_list):
-    with open(pair_list, 'r') as fd:
-        pairs = fd.readlines()
-
+def test_performance(feature_dict, pairs):
     sims = []
     labels = []
-    for pair in pairs:
-        splits = pair.split()
-        fe_1 = fe_dict.get(splits[0], None)
-        fe_2 = fe_dict.get(splits[1], None)
+    for face1, face2, label in pairs:
 
-        if fe_1 is None or fe_2 is None:
+        feature_1 = feature_dict.get(face1, None)
+        feature_2 = feature_dict.get(face2, None)
+        if feature_1 is None or feature_2 is None:
             continue
 
-        label = int(splits[2])
-        sim = cosin_metric(fe_1, fe_2)
-
+        sim = cosin_metric(feature_1, feature_2)  # 计算cosθ
         sims.append(sim)
         labels.append(label)
 
     acc, th = cal_accuracy(sims, labels)
     return acc, th
 
-def test(model, test_size):
-    """
-    重构后的测试入口，它去加载 形如 "xxx.jpg xxx.jpg 1"的lfw的测试文件，0/1表示是不是同一个人，
-    """
-    identity_list = get_lfw_list(opt.lfw_test_list)  # 我理解是加载测试集，为何不用dataset+dataloader?
-    img_paths = [os.path.join(opt.lfw_root, each) for each in identity_list]
-    acc = lfw_test(model, img_paths[test_size], identity_list[test_size], opt.lfw_test_list,
-                   opt.test_batch_size)
-    return acc
+
+def extract_face_images(face1_face2_label_list):
+    face_image_paths = []
+    for face1, face2, _ in face1_face2_label_list:
+        if face1 not in face_image_paths:
+            face_image_paths.append(face1)
+        if face1 not in face_image_paths:
+            face_image_paths.append(face2)
+    return face_image_paths
 
 
-def lfw_test(model, img_paths, identity_list, pair_list_path, batch_size):
+def test(model, opt):
+    """
+    重构后的测试入口，它去加载 形如 "xxx.jpg xxx.jpg 1"的lfw的测试文件，0/1表示是不是同一个人的脸，
+    """
+    face1_face2_label_list = load_test_pairs(opt.lfw_test_pair_path)
+    face1_face2_label_list = face1_face2_label_list[:opt.test_size]
+
+    face_image_names = extract_face_images(face1_face2_label_list)
+    face_image_paths = [os.path.join(opt.lfw_root, each) for each in face_image_names]
+
     s = time.time()
-    features, count = get_featurs(model, img_paths, batch_size=batch_size)
-    logger.debug("人脸的特征shape：%r",features.shape)
+    image_feature_dicts = calculate_features(model, face_image_paths)
+    logger.debug("人脸的特征shape：%r", len(image_feature_dicts))
     t = time.time() - s
-    logger.info('耗时: {}, 每张耗时：{}'.format(t, t / count))
-    fe_dict = get_feature_dict(identity_list, features)
-    acc, th = test_performance(fe_dict, pair_list_path)
-    logger.info("测试%d对人脸，正确率%.2f(阈值%.2f)",len(features),acc,th)
+    logger.info('耗时: {}, 每张耗时：{}'.format(t, t / len(image_feature_dicts)))
+
+    acc, th = test_performance(image_feature_dicts, face1_face2_label_list)
+    logger.info("测试%d对人脸，（最好）正确率%.2f，(适配出来的最好的阈值%.2f)", len(face1_face2_label_list), acc, th)
     return acc
 
 
-if __name__ == '__main__':
-
-    opt = Config()
-    if opt.backbone == 'resnet18':
-        model = resnet_face18(opt.use_se)
-    elif opt.backbone == 'resnet34':
-        model = resnet34()
-    elif opt.backbone == 'resnet50':
-        model = resnet50()
-
-    model = DataParallel(model)
-    # load_model(model, opt.test_model_path)
-    model.load_state_dict(torch.load(opt.test_model_path))
-    model.to(torch.device("cuda"))
-
-    identity_list = get_lfw_list(opt.lfw_test_list)
-    img_paths = [os.path.join(opt.lfw_root, each) for each in identity_list]
-
-    model.eval()
-    lfw_test(model, img_paths, identity_list, opt.lfw_test_list, opt.test_batch_size)
+def load_test_pairs(test_file_path):
+    face1_face2_label_list = []
+    with open(test_file_path, 'r') as fd:
+        lines = fd.readlines()
+        for line in lines:
+            line = line.strip()
+            pairs = line.split()
+            face1 = pairs[0]
+            face2 = pairs[1]
+            label = int(pairs[2])
+            face1_face2_label_list.append([face1, face2, label])
+    return face1_face2_label_list

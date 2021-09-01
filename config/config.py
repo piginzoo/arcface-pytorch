@@ -3,7 +3,7 @@ import sys
 
 class Config(object):
     env = 'default'
-    backbone = 'resnet50'
+    backbone = 'resnet18'
     classify = 'softmax'
     num_classes = 13938
     metric = 'arc_margin'
@@ -22,16 +22,17 @@ class Config(object):
     # lfw_root = '/data/Datasets/lfw/lfw-align-128'
     # lfw_test_list = '/data/Datasets/lfw/lfw_test_pair.txt'
 
-    checkpoints_path = 'checkpoints/arface_{}_{}_{}.model' # epoch,datetime,loss,acc
+    checkpoints_path = 'checkpoints/arcface_e{}_s{}_{}_l{:.2f}_a{:.2f}.model' # epoch,step,datetime,loss,acc
 
     train_batch_size = 32  # batch size
 
     lfw_root = 'data/val/images'
-    lfw_test_list = 'data/val/lfw_test_pair.txt'
+    lfw_test_pair_path = 'data/val/lfw_test_pair.txt'
     test_model_path = 'checkpoints/resnet18_110.pth'
     test_batch_size = 60
     test_size = sys.maxsize
 
+    early_stop = 30
 
     input_shape = (1, 128, 128)
 

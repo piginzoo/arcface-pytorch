@@ -107,15 +107,15 @@ if __name__ == '__main__':
                                      lr=opt.lr, weight_decay=opt.weight_decay)
     # StepLR是调整学习率的
     scheduler = StepLR(optimizer, step_size=opt.lr_step, gamma=0.1)
-    early_stopper = EarlyStop()
+    early_stopper = EarlyStop(opt.early_stop)
 
     start = time.time()
     train_size = len(trainloader)
+    latest_loss = 99999
     for epoch in range(opt.max_epoch):
         scheduler.step()
         model.train()
 
-        latest_loss = 99999
         for step_of_epoch, data in enumerate(trainloader):
             data_input, label = data
             data_input = data_input.to(device)
@@ -126,24 +126,21 @@ if __name__ == '__main__':
             optimizer.zero_grad()  # 先把所有的梯度都清零？为何？
             loss.backward()
             optimizer.step()
+            latest_loss = loss.item()
 
             total_steps = epoch * len(trainloader) + step_of_epoch
 
             # 每隔N个batch，就算一下这个批次的正确率
             if total_steps % opt.print_freq == 0:
-
                 output = output.data.cpu().numpy()
                 output = np.argmax(output, axis=1)
                 label = label.data.cpu().numpy()
                 train_batch_acc = np.mean((output == label).astype(int))
                 speed = opt.print_freq / (time.time() - start)
                 time_str = time.asctime(time.localtime(time.time()))
-
-                latest_loss = loss.item()
-                logger.info("Epoch[%s],迭代[%d],loss[%.4f],batch_acc[%.4f]",
-                            time_str,
+                logger.info("Epoch[%s],迭代[%d],速度[%.0f],loss[%.4f],batch_acc[%.4f]",
+                            epoch,
                             total_steps,
-                            step_of_epoch,
                             speed,
                             loss.item(),
                             train_batch_acc)
@@ -155,17 +152,18 @@ if __name__ == '__main__':
                 start = time.time()
 
         model.eval()
-        acc = test.test(model, opt.test_size)
+        acc = test(model, opt)
 
         if latest_loss < min_loss:
-            logger.info("Epoch[%d] loss[%.4f] 比之前 loss[%.4f] 更低，保存模型", epoch, latest_loss, min_loss)
-            save_model(model, epoch, train_size, latest_loss, acc)
+            logger.info("Epoch[%d] loss[%.4f] 比之前 loss[%.4f] 更低，保存模型",
+                        epoch,
+                        latest_loss,
+                        min_loss)
+            save_model(epoch, model, train_size, latest_loss, acc)
 
         # early_stopper可以帮助存基于acc的best模型
         # save_model(epoch, model,train_size,loss,acc):
-        early_stopper.decide(value=acc,
-                             saver=save_model,
-                             args=(epoch + 1, model, train_size, latest_loss, acc))
+        early_stopper.decide(acc, save_model, epoch + 1, model, train_size, latest_loss, acc)
 
         if opt.display:
             total_steps = (epoch + 1) * train_size
