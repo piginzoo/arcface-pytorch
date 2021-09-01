@@ -1,27 +1,32 @@
 # 人脸比较-arcface
 
 # 数据
-旧代码用的是
-用[CASIA-webface](https://paperswithcode.com/dataset/casia-webface)做训练集，
-用lfw数据集做验证集，算acc[参考](http://home.ustc.edu.cn/~yqli1995/2019/09/28/lfw/)
+
+旧代码用的训练集是Webface数据：[CASIA-webface](https://paperswithcode.com/dataset/casia-webface)做训练集，
+我改成了CelebA数据集作为训练集：[CelebA数据集](https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html)
+测试集仍然使用原代码的lfw数据集，用于计算acc：[LfW数据集](http://home.ustc.edu.cn/~yqli1995/2019/09/28/lfw/)
+
 ```
-➜  lfw ll images/Aaron_Peirsol
-total 136
--rw-r--r--  1 piginzoo  staff    13K 10  7  2007 Aaron_Peirsol_0001.jpg
--rw-r--r--  1 piginzoo  staff    16K 10  7  2007 Aaron_Peirsol_0002.jpg
--rw-r--r--  1 piginzoo  staff    14K 10  7  2007 Aaron_Peirsol_0003.jpg
--rw-r--r--  1 piginzoo  staff    16K 10  7  2007 Aaron_Peirsol_0004.jpg
+训练数据
+train    <--- CelebA数据集
+├── Anno
+│   └── identity_CelebA.txt
+└── Img
+    └── img_align_celeba
+        ├── 010353.jpg
+        ├── 134059.jpg
+        └── 139608.jpg
 
-# 正例
-Aaron_Peirsol    1    2
-Aaron_Peirsol    3    4
-# 负例
-AJ_Cook    1    Marsha_Thomason    1
-Aaron_Sorkin    2    Frank_Solich    5
-
-1，2，3，4，5是图片的编号：Aaron_Peirsol_0003.jpg => 3
+测试数据
+val     <--- lfw数据集
+├── images
+│        ├── AJ_Cook
+│        │       └── AJ_Cook_0001.jpg
+│        ├── AJ_Lamas
+│        │       └── AJ_Lamas_0001.jpg
+│        ├── Aaron_Eckhart
+│        │       └── Aaron_Eckhart_0001.jpg
 ```
-
 
 # 原文档
 ```
