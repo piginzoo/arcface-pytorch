@@ -1,8 +1,8 @@
 from __future__ import print_function
 
 import argparse
+import datetime
 import logging
-import os
 import time
 
 import numpy as np
@@ -16,19 +16,22 @@ from config.config import Config
 from models.focal_loss import FocalLoss
 from models.metrics import AddMarginProduct, ArcMarginProduct, SphereProduct
 from models.resnet import resnet_face18, resnet34, resnet50
-from test import lfw_test, get_lfw_list
+from test import test
 from utils import init_log
 from utils.dataset import Dataset
+from utils.early_stop import EarlyStop
 from utils.visualizer import Visualizer
 
 logger = logging.getLogger(__name__)
 
 
-def save_model(model, save_path, name, iter_cnt):
-    save_name = os.path.join(save_path, name + '_' + str(iter_cnt) + '.pth')
-    torch.save(model.state_dict(), save_name)
-    logger.info("模型保存到：%s",save_name)
-    return save_name
+def save_model(epoch, model, train_size, loss, acc):
+    # 'checkpoints/arface_{}_{}_{}.model' # epoch,datetime,loss,acc
+    step = epoch * train_size
+    now = datetime.datetime.now().strftime("%Y%m%d%H%M")
+    model_path = opt.checkpoints_path.format(epoch, step, now, loss, acc)
+    torch.save(model.state_dict(), model_path)
+    logger.info("模型保存到：%s", model_path)
 
 
 if __name__ == '__main__':
@@ -38,18 +41,19 @@ if __name__ == '__main__':
     parser.add_argument("--mode", default="normal", type=str)
     args = parser.parse_args()
 
-    logger.info("参数配置：%r",args)
+    min_loss = 999999
+
+    logger.info("参数配置：%r", args)
 
     init_log()
 
     opt = Config()
     if args.mode == "debug":
         logger.info("启动调试模式 >>>>> ")
-        opt.max_epoch = 1
+        opt.max_epoch = 2
         opt.test_batch_size = 1
         opt.test_batch_size = 1
-        opt.test_size = 1
-
+        opt.test_size = 3
 
     if opt.display:
         visualizer = Visualizer()
@@ -62,9 +66,6 @@ if __name__ == '__main__':
                                   batch_size=opt.train_batch_size,
                                   shuffle=True,
                                   num_workers=opt.num_workers)
-
-    identity_list = get_lfw_list(opt.lfw_test_list)  # 我理解是加载测试集，为何不用dataset+dataloader?
-    img_paths = [os.path.join(opt.lfw_root, each) for each in identity_list]
 
     print('{} train iters per epoch:'.format(len(trainloader)))
 
@@ -106,13 +107,16 @@ if __name__ == '__main__':
                                      lr=opt.lr, weight_decay=opt.weight_decay)
     # StepLR是调整学习率的
     scheduler = StepLR(optimizer, step_size=opt.lr_step, gamma=0.1)
+    early_stopper = EarlyStop()
 
     start = time.time()
-    for i in range(opt.max_epoch):
-        scheduler.step()  # ？？？
-
+    train_size = len(trainloader)
+    for epoch in range(opt.max_epoch):
+        scheduler.step()
         model.train()
-        for ii, data in enumerate(trainloader):
+
+        latest_loss = 99999
+        for step_of_epoch, data in enumerate(trainloader):
             data_input, label = data
             data_input = data_input.to(device)
             label = label.to(device).long()
@@ -123,29 +127,46 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-            iters = i * len(trainloader) + ii
+            total_steps = epoch * len(trainloader) + step_of_epoch
 
-            if iters % opt.print_freq == 0:
+            # 每隔N个batch，就算一下这个批次的正确率
+            if total_steps % opt.print_freq == 0:
+
                 output = output.data.cpu().numpy()
                 output = np.argmax(output, axis=1)
                 label = label.data.cpu().numpy()
-                # print(output)
-                # print(label)
-                acc = np.mean((output == label).astype(int))
+                train_batch_acc = np.mean((output == label).astype(int))
                 speed = opt.print_freq / (time.time() - start)
                 time_str = time.asctime(time.localtime(time.time()))
-                logger.info('{} train epoch {} iter {} {} iters/s loss {} acc {}'.format(time_str, i, ii, speed, loss.item(),
-                                                                                   acc))
+
+                latest_loss = loss.item()
+                logger.info("Epoch[%s],迭代[%d],loss[%.4f],batch_acc[%.4f]",
+                            time_str,
+                            total_steps,
+                            step_of_epoch,
+                            speed,
+                            loss.item(),
+                            train_batch_acc)
+
                 if opt.display:
-                    visualizer.display_current_results(iters, loss.item(), name='train_loss')
-                    visualizer.display_current_results(iters, acc, name='train_acc')
+                    visualizer.display_current_results(total_steps, loss.item(), name='train_loss')
+                    visualizer.display_current_results(total_steps, acc, name='train_acc')
 
                 start = time.time()
 
-        if i % opt.save_interval == 0 or i == opt.max_epoch:
-            save_model(model, opt.checkpoints_path, opt.backbone, i)
-
         model.eval()
-        acc = lfw_test(model, img_paths[:opt.test_size], identity_list[:opt.test_size], opt.lfw_test_list, opt.test_batch_size)
+        acc = test.test(model, opt.test_size)
+
+        if latest_loss < min_loss:
+            logger.info("Epoch[%d] loss[%.4f] 比之前 loss[%.4f] 更低，保存模型", epoch, latest_loss, min_loss)
+            save_model(model, epoch, train_size, latest_loss, acc)
+
+        # early_stopper可以帮助存基于acc的best模型
+        # save_model(epoch, model,train_size,loss,acc):
+        early_stopper.decide(value=acc,
+                             saver=save_model,
+                             args=(epoch + 1, model, train_size, latest_loss, acc))
+
         if opt.display:
-            visualizer.display_current_results(iters, acc, name='test_acc')
+            total_steps = (epoch + 1) * train_size
+            visualizer.display_current_results(total_steps, acc, name='test_acc')

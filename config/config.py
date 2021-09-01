@@ -3,7 +3,7 @@ import sys
 
 class Config(object):
     env = 'default'
-    backbone = 'resnet18'
+    backbone = 'resnet50'
     classify = 'softmax'
     num_classes = 13938
     metric = 'arc_margin'
@@ -22,11 +22,9 @@ class Config(object):
     # lfw_root = '/data/Datasets/lfw/lfw-align-128'
     # lfw_test_list = '/data/Datasets/lfw/lfw_test_pair.txt'
 
-    checkpoints_path = 'checkpoints'
-    load_model_path = 'models/resnet18.pth'
-    save_interval = 10
+    checkpoints_path = 'checkpoints/arface_{}_{}_{}.model' # epoch,datetime,loss,acc
 
-    train_batch_size = 16  # batch size
+    train_batch_size = 32  # batch size
 
     lfw_root = 'data/val/images'
     lfw_test_list = 'data/val/lfw_test_pair.txt'
@@ -42,7 +40,7 @@ class Config(object):
     use_gpu = False  # use GPU or not
     gpu_id = '0, 1'
     num_workers = 4  # how many workers for loading data
-    print_freq = 100  # print info every N batch
+    print_freq = 1000  # print info every N batch
 
     debug_file = '/tmp/debug'  # if os.path.exists(debug_file): enter ipdb
     result_file = 'result.csv'

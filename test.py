@@ -8,7 +8,7 @@ from __future__ import print_function
 
 import os
 import time
-
+import logging
 import cv2
 import numpy as np
 import torch
@@ -17,6 +17,8 @@ from torch.nn import DataParallel
 from config.config import Config
 from models.resnet import resnet_face18, resnet34, resnet50
 
+
+logger = logging.getLogger(__name__)
 
 def get_lfw_list(pair_list):
     with open(pair_list, 'r') as fd:
@@ -144,16 +146,26 @@ def test_performance(fe_dict, pair_list):
     acc, th = cal_accuracy(sims, labels)
     return acc, th
 
+def test(model, test_size):
+    """
+    重构后的测试入口，它去加载 形如 "xxx.jpg xxx.jpg 1"的lfw的测试文件，0/1表示是不是同一个人，
+    """
+    identity_list = get_lfw_list(opt.lfw_test_list)  # 我理解是加载测试集，为何不用dataset+dataloader?
+    img_paths = [os.path.join(opt.lfw_root, each) for each in identity_list]
+    acc = lfw_test(model, img_paths[test_size], identity_list[test_size], opt.lfw_test_list,
+                   opt.test_batch_size)
+    return acc
+
 
 def lfw_test(model, img_paths, identity_list, pair_list_path, batch_size):
     s = time.time()
-    features, cnt = get_featurs(model, img_paths, batch_size=batch_size)
-    print(features.shape)
+    features, count = get_featurs(model, img_paths, batch_size=batch_size)
+    logger.debug("人脸的特征shape：%r",features.shape)
     t = time.time() - s
-    print('total time is {}, average time is {}'.format(t, t / cnt))
+    logger.info('耗时: {}, 每张耗时：{}'.format(t, t / count))
     fe_dict = get_feature_dict(identity_list, features)
     acc, th = test_performance(fe_dict, pair_list_path)
-    print('lfw face verification accuracy: ', acc, 'threshold: ', th)
+    logger.info("测试%d对人脸，正确率%.2f(阈值%.2f)",len(features),acc,th)
     return acc
 
 
