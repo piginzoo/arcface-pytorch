@@ -3,7 +3,9 @@
 # 数据
 
 旧代码用的训练集是Webface数据：[CASIA-webface](https://paperswithcode.com/dataset/casia-webface)做训练集，
+
 我改成了CelebA数据集作为训练集：[CelebA数据集](https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html)
+
 测试集仍然使用原代码的lfw数据集，用于计算acc：[LfW数据集](http://home.ustc.edu.cn/~yqli1995/2019/09/28/lfw/)
 
 ```

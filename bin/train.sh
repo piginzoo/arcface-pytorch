@@ -8,6 +8,7 @@ fi
 if [ "$1" = "console" ]
 then
     echo "调试模式"
+    CUDA_VISIBLE_DEVICES=1 \
     python train.py \
     --name arcface \
     --mode debug
