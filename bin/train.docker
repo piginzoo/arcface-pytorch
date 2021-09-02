@@ -1,6 +1,6 @@
 PWD=`pwd`
-if [ "$2" == "debug" ]; then
-    echo "运行调试模式 ..."
+if [ "$2" == "local" ]; then
+    echo "本地调试模式 ..."
     docker run --rm -it \
     -e NVIDIA_VISIBLE_DEVICES=$1 \
     -t --rm  \
@@ -14,15 +14,15 @@ if [ "$2" == "debug" ]; then
     exit
 fi
 
-if [ "$2" == "console" ]; then
-    echo "运行Console模式 ..."
+if [ "$2" == "debug" ]; then
+    echo "运行Debug模式 ..."
     docker run --rm -it \
     -e NVIDIA_VISIBLE_DEVICES=$1 \
     -t --rm  \
     --runtime=nvidia  \
     --mount type=bind,source=$PWD,target=/root/arcface \
-    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/CelebA",target=/root/arcface/data/train \
-    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/lfw",target=/root/arcface/data/val \
+    --mount type=bind,source="/app/data/face/CelebA/",target=/root/arcface/data/train \
+    --mount type=bind,source="/app/data/face/lfw/",target=/root/arcface/data/val \
     --name arcface_train \
     --workdir /root/arcface \
     arcface.img:v1 \
@@ -30,4 +30,5 @@ if [ "$2" == "console" ]; then
     exit
 fi
 
-
+#    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/CelebA",target=/root/arcface/data/train \
+#    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/lfw",target=/root/arcface/data/val \
