@@ -1,0 +1,33 @@
+PWD=`pwd`
+if [ "$2" == "debug" ]; then
+    echo "运行调试模式 ..."
+    docker run --rm -it \
+    -e NVIDIA_VISIBLE_DEVICES=$1 \
+    -t --rm  \
+    --mount type=bind,source=$PWD,target=/root/arcface \
+    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/CelebA",target=/root/arcface/data/train \
+    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/lfw",target=/root/arcface/data/val \
+    --name arcface_train \
+    --workdir /root/arcface \
+    arcface.img \
+    bin/train.sh debug
+    exit
+fi
+
+if [ "$2" == "console" ]; then
+    echo "运行Console模式 ..."
+    docker run --rm -it \
+    -e NVIDIA_VISIBLE_DEVICES=$1 \
+    -t --rm  \
+    --runtime=nvidia  \
+    --mount type=bind,source=$PWD,target=/root/arcface \
+    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/CelebA",target=/root/arcface/data/train \
+    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/lfw",target=/root/arcface/data/val \
+    --name arcface_train \
+    --workdir /root/arcface \
+    arcface.img:v1 \
+    bin/train.sh
+    exit
+fi
+
+

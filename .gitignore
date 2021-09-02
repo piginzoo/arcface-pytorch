@@ -6,3 +6,4 @@ data/
 logs/
 logs
 checkpoints/
+__pycache__

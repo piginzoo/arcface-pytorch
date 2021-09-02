@@ -1,3 +1,4 @@
+#!/bin/bash
 Date=$(date +%Y%m%d%H%M)
 if [ "$1" = "stop" ]; then
     echo "停止训练"
@@ -5,7 +6,7 @@ if [ "$1" = "stop" ]; then
     exit
 fi
 
-if [ "$1" = "console" ]
+if [ "$1" = "debug" ]
 then
     echo "调试模式"
     CUDA_VISIBLE_DEVICES=1 \

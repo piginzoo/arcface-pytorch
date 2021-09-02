@@ -1,6 +1,4 @@
 import logging
-import tensorflow as tf
-FLAGS = tf.app.flags.FLAGS
 logger = logging.getLogger("Ealiy Stop")
 
 class EarlyStop():
