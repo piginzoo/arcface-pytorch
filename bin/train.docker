@@ -1,33 +1,51 @@
+#!/bin/bash
+if [ "$2" == "" ]; then
+    echo "格式：bin/train.docker <GPU:0|1> <local|term|debug|prod>"
+    exit
+fi
+
 PWD=`pwd`
+TRAIN_DIR=/app/data/face/CelebA/
+VAL_DIR=/app/data/face/lfw/
+GPU_OPT="--runtime=nvidia"
+DAEMON=""
+
 if [ "$2" == "local" ]; then
-    echo "本地调试模式 ..."
-    docker run --rm -it \
-    -e NVIDIA_VISIBLE_DEVICES=$1 \
-    --mount type=bind,source=$PWD,target=/root/arcface \
-    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/CelebA",target=/root/arcface/data/train \
-    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/lfw",target=/root/arcface/data/val \
-    --name arcface_train \
-    --workdir /root/arcface \
-    arcface.img:v1 \
-    bin/train.sh debug
+    echo "本地（笔记本上，无显卡）调试模式 ..."
+    TRAIN_DIR=/Users/piginzoo/Downloads/train_images/人脸/CelebA
+    VAL_DIR=/Users/piginzoo/Downloads/train_images/人脸/lfw
+    GPU_OPT=""
+    CMD="bin/train.sh debug"
+elif [ "$2" == "debug" ]; then
+    echo "服务器上的Debug模式，只跑很少的epochs ..."
+    CMD="bin/train.sh debug"
+elif [ "$2" == "term" ]; then
+    echo "服务器上的Debug模式，只跑很少的epochs ..."
+    CMD="/bin/bash"
+elif [ "$2" == "prod" ]; then
+    echo "服务器上的生产模式，真正的训练 ..."
+    CMD=bin/train.sh
+    DAEMON="-d"
+else
+    echo "无法识别的模式：$2，退出！"
     exit
 fi
 
-if [ "$2" == "debug" ]; then
-    echo "运行Debug模式 ..."
-    docker run --rm -it \
-    -e NVIDIA_VISIBLE_DEVICES=$1 \
-    -t --rm  \
-    --runtime=nvidia  \
-    --mount type=bind,source=$PWD,target=/root/arcface \
-    --mount type=bind,source="/app/data/face/CelebA/",target=/root/arcface/data/train \
-    --mount type=bind,source="/app/data/face/lfw/",target=/root/arcface/data/val \
-    --name arcface_train \
-    --workdir /root/arcface \
-    arcface.img:v1 \
-    bin/train.sh debug
-    exit
-fi
+FULL_CMD="
+    docker run --rm
+    -it $DAEMON $GPU_OPT
+    -e NVIDIA_VISIBLE_DEVICES=$1
+    -v $PWD:/root/arcface
+    -v $TRAIN_DIR:/root/arcface/data/train
+    -v $VAL_DIR:/root/arcface/data/val
+    --name arcface_train
+    --workdir /root/arcface
+    arcface.img:v1
+    $CMD
+"
 
-#    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/CelebA",target=/root/arcface/data/train \
-#    --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/lfw",target=/root/arcface/data/val \
+echo "启动命令："
+echo "==================================="
+echo "$FULL_CMD"
+echo "==================================="
+eval $FULL_CMD
