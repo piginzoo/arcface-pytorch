@@ -9,7 +9,7 @@ fi
 if [ "$1" = "debug" ]
 then
     echo "调试模式"
-    CUDA_VISIBLE_DEVICES=1 \
+    CUDA_VISIBLE_DEVICES=0 \
     python train.py \
     --name arcface \
     --mode debug
@@ -22,9 +22,5 @@ then
       --name arcface \
       --mode normal
 else
-    echo "生产模式"
-    CUDA_VISIBLE_DEVICES=1 \
-      python train.py \
-      --name arcface \
-      --mode normal>> ./logs/console.${Date}.log 2>&1 &
+    echo "无法识别的模式：$1"
 fi
