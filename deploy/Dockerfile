@@ -1,4 +1,5 @@
-From pytorch/pytorch:1.7.1-cuda11.0-cudnn8-runtime
+# From pytorch/pytorch:1.7.1-cuda11.0-cudnn8-runtime
+From From tensorflow/tensorflow:2.1.0-gpu-py3
 
 MAINTAINER piginzoo
 
