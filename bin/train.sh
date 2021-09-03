@@ -13,10 +13,18 @@ then
     python train.py \
     --name arcface \
     --mode debug
+if [ "$1" = "prod" ]
+then
+    # 这个是用于docker的训练用的entry，CUDA_VISIBLE_DEVICES=0，因为显卡始终是第一块
+    echo "Docker生产模式"
+    CUDA_VISIBLE_DEVICES=0 \
+      python train.py \
+      --name arcface \
+      --mode normal
 else
     echo "生产模式"
     CUDA_VISIBLE_DEVICES=1 \
       python train.py \
-      --name captcha \
+      --name arcface \
       --mode normal>> ./logs/console.${Date}.log 2>&1 &
 fi
