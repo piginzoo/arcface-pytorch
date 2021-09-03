@@ -9,6 +9,8 @@ TRAIN_DIR=/app/data/face/CelebA/
 VAL_DIR=/app/data/face/lfw/
 GPU_OPT="--runtime=nvidia"
 DAEMON=""
+PROXY="--env http_proxy=http://172.17.0.1:8123 --env https_proxy=http://172.17.0.1:8123 --env HTTP_PROXY=http://172.17.0.1:8123 --env HTTPS_PROXY=http://172.17.0.1:8123"
+
 
 if [ "$2" == "local" ]; then
     echo "本地（笔记本上，无显卡）调试模式 ..."
@@ -16,6 +18,7 @@ if [ "$2" == "local" ]; then
     VAL_DIR=/Users/piginzoo/Downloads/train_images/人脸/lfw
     GPU_OPT=""
     CMD="bin/train.sh debug"
+    PROXY=""
 elif [ "$2" == "debug" ]; then
     echo "服务器上的Debug模式，只跑很少的epochs ..."
     CMD="bin/train.sh debug"
@@ -34,7 +37,7 @@ fi
 FULL_CMD="
     docker run --rm
     -it $DAEMON $GPU_OPT
-    -e NVIDIA_VISIBLE_DEVICES=$1
+    -e NVIDIA_VISIBLE_DEVICES=$1 $PROXY
     -v $PWD:/root/arcface
     -v $TRAIN_DIR:/root/arcface/data/train
     -v $VAL_DIR:/root/arcface/data/val
