@@ -13,7 +13,7 @@ then
     python train.py \
     --name arcface \
     --mode debug
-if [ "$1" = "prod" ]
+elif [ "$1" = "prod" ]
 then
     # 这个是用于docker的训练用的entry，CUDA_VISIBLE_DEVICES=0，因为显卡始终是第一块
     echo "Docker生产模式"
