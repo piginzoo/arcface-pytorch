@@ -3,13 +3,12 @@ if [ "$2" == "local" ]; then
     echo "本地调试模式 ..."
     docker run --rm -it \
     -e NVIDIA_VISIBLE_DEVICES=$1 \
-    -t --rm  \
     --mount type=bind,source=$PWD,target=/root/arcface \
     --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/CelebA",target=/root/arcface/data/train \
     --mount type=bind,source="/Users/piginzoo/Downloads/train_images/人脸/lfw",target=/root/arcface/data/val \
     --name arcface_train \
     --workdir /root/arcface \
-    arcface.img \
+    arcface.img:v1 \
     bin/train.sh debug
     exit
 fi

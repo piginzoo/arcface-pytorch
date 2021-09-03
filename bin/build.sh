@@ -6,7 +6,7 @@ if [ "$1" == "proxy" ]; then
         --build-arg https_proxy="http://172.17.0.1:8123" \
         --build-arg HTTP_PROXY="http://172.17.0.1:8123" \
         --build-arg HTTPS_PROXY="http://172.17.0.1:8123" \
-        -f config/Dockerfile \
+        -f deploy/Dockerfile \
         -t arcface.img:v1 .
     exit
 fi
