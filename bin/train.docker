@@ -1,8 +1,4 @@
 #!/bin/bash
-if [ "$2" == "" ]; then
-    echo "格式：bin/train.docker <GPU:0|1> <local|term|debug|prod>"
-    exit
-fi
 
 if [ "$1" == "stop" ]; then
     echo "关闭arcface训练容器..."
@@ -10,6 +6,10 @@ if [ "$1" == "stop" ]; then
     exit
 fi
 
+if [ "$2" == "" ]; then
+    echo "格式：bin/train.docker <GPU:0|1> <local|term|debug|prod>"
+    exit
+fi
 
 PWD=`pwd`
 TRAIN_DIR=/app/data/face/CelebA/
