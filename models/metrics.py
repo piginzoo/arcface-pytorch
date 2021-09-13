@@ -18,7 +18,7 @@ class ArcMarginProduct(nn.Module):
             m: margin 是一个角度的margin，你可以理解是一段弧长
     """
 
-    def __init__(self, in_features, out_features, s=30.0, m=0.50, easy_margin=False):
+    def __init__(self, in_features, out_features, s=30.0, m=0.50, easy_margin=False,device='cuda'):
         super(ArcMarginProduct, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -32,6 +32,7 @@ class ArcMarginProduct(nn.Module):
         self.sin_m = math.sin(m)
         self.th = math.cos(math.pi - m)
         self.mm = math.sin(math.pi - m) * m
+        self.device = device
 
     def forward(self, input, label):
         """
@@ -55,7 +56,7 @@ class ArcMarginProduct(nn.Module):
             phi = torch.where(cosine > self.th, phi, cosine - self.mm)
         # --------------------------- convert label to one-hot ---------------------------
         # one_hot = torch.zeros(cosine.size(), requires_grad=True, device='cuda')
-        one_hot = torch.zeros(cosine.size()) # , device='cuda'
+        one_hot = torch.zeros(cosine.size(),device=self.device)
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
         output = (one_hot * phi) + (

@@ -86,7 +86,7 @@ if __name__ == '__main__':
     elif opt.metric == 'arc_margin':
         # easy_margin = False
         # 你注意这个细节，这个是一个网络中的"层";需要传入num_classes，也就是说，多少个人的人脸就是多少类
-        metric_fc = ArcMarginProduct(512, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin)
+        metric_fc = ArcMarginProduct(512, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin,device=device)
     elif opt.metric == 'sphere':
         metric_fc = SphereProduct(512, opt.num_classes, m=4)
     else:
