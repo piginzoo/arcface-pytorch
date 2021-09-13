@@ -52,8 +52,8 @@ if __name__ == '__main__':
         logger.info("启动调试模式 >>>>> ")
         opt.max_epoch = 2
         opt.test_batch_size = 1
-        opt.test_batch_size = 1
         opt.test_size = 3
+        opt.print_freq = 1
 
     if opt.display:
         visualizer = Visualizer()
@@ -67,7 +67,7 @@ if __name__ == '__main__':
                                   shuffle=True,
                                   num_workers=opt.num_workers)
 
-    print('{} train iters per epoch:'.format(len(trainloader)))
+    logger.info('每个Epoch有%d个批次，每个批次%d张',len(trainloader),opt.train_batch_size)
 
     if opt.loss == 'focal_loss':
         criterion = FocalLoss(gamma=2)
@@ -117,6 +117,11 @@ if __name__ == '__main__':
         model.train()
 
         for step_of_epoch, data in enumerate(trainloader):
+            # 这个是为了测试方便，只截取很短的数据训练
+            if step_of_epoch>opt.test_size:
+                logger.info("当前epoch内step[%d] > 训练最大数量[%d]，此epoch提前结束",step_of_epoch,opt.test_size)
+                break
+
             data_input, label = data
             data_input = data_input.to(device)
             label = label.to(device).long()
