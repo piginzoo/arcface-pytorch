@@ -27,7 +27,7 @@ elif [ "$2" == "term" ]; then
     CMD="/bin/bash"
 elif [ "$2" == "prod" ]; then
     echo "服务器上的生产模式，真正的训练 ..."
-    CMD=bin/train.sh prod
+    CMD="bin/train.sh prod"
     DAEMON="-d"
 else
     echo "无法识别的模式：$2，退出！"
