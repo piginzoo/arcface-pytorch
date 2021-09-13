@@ -4,6 +4,13 @@ if [ "$2" == "" ]; then
     exit
 fi
 
+if [ "$1" == "stop" ]; then
+    echo "关闭arcface训练容器..."
+    docker ps|grep arcface_train|awk '{print $1}'|xargs docker stop
+    exit
+fi
+
+
 PWD=`pwd`
 TRAIN_DIR=/app/data/face/CelebA/
 VAL_DIR=/app/data/face/lfw/
