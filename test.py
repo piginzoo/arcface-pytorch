@@ -18,20 +18,25 @@ logger = logging.getLogger(__name__)
 
 
 def load_image(image_path):
+
     if not os.path.exists(image_path):
         logger.warning("图片路径不存在：%s", image_path)
         return None
 
+    # 加载成黑白照片
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if image is None:
         logger.warning("图片加载失败：%s", image_path)
         return None
 
+    # 做resize、变黑白（前面做了）、归一化3件事
+    # resize
     image = cv2.resize(image, (128, 128))
-    image = np.dstack((image, np.fliplr(image)))
+    image = np.dstack((image, np.fliplr(image))) # fliplr函数将矩阵进行左右翻转
     image = image.transpose((2, 0, 1))
     image = image[:, np.newaxis, :, :]
     image = image.astype(np.float32, copy=False)
+    # 归一化
     image -= 127.5
     image /= 127.5
     return image

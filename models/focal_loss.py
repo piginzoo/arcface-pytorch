@@ -27,5 +27,6 @@ class FocalLoss(nn.Module):
     def forward(self, input, target):
         logp = self.ce(input, target)
         p = torch.exp(-logp)
+        # FL(p)=-alpha (1-p)^gamma * log(p)：alpha=1
         loss = (1 - p) ** self.gamma * logp
         return loss.mean()

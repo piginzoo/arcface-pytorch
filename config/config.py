@@ -5,7 +5,7 @@ class Config(object):
     env = 'default'
     backbone = 'resnet18'
     classify = 'softmax'
-    num_classes = 13938
+    num_classes = 10177  # webface数据集10575,celeba数据集10177个分类
     metric = 'arc_margin'
     easy_margin = False
     use_se = False
@@ -14,15 +14,13 @@ class Config(object):
     display = True
     finetune = False
 
-    # train_root = '/data/Datasets/webface/CASIA-maxpy-clean-crop-144/'
-    # train_list = '/data/Datasets/webface/train_data_13938.txt'
     train_root = 'data/train/Img/img_align_celeba/'
     train_list = 'data/train/Anno/identity_CelebA.txt'
 
-    # lfw_root = '/data/Datasets/lfw/lfw-align-128'
-    # lfw_test_list = '/data/Datasets/lfw/lfw_test_pair.txt'
+    train_root = 'data/train/Img/img_align_celeba/'
+    train_list = 'data/train/Anno/identity_CelebA.txt'
 
-    checkpoints_path = 'checkpoints/arcface_e{}_s{}_{}_l{:.2f}_a{:.2f}.model' # epoch,step,datetime,loss,acc
+    checkpoints_path = 'checkpoints/arcface_e{}_s{}_{}_l{:.2f}_a{:.2f}.model'  # epoch,step,datetime,loss,acc
 
     train_batch_size = 32  # batch size
 
@@ -52,3 +50,7 @@ class Config(object):
     lr_decay = 0.95  # when val_loss increase, lr = lr*lr_decay
     weight_decay = 5e-4
 
+    # 日志信息
+    tensorboard_dir = "logs/tboard"
+    visdom_port = 8086
+    visualizer = "tensorboard"

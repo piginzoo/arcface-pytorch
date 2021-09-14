@@ -12,6 +12,7 @@ from torch.nn import DataParallel
 from torch.optim.lr_scheduler import StepLR
 from torch.utils import data
 
+import utils
 from config.config import Config
 from models.focal_loss import FocalLoss
 from models.metrics import AddMarginProduct, ArcMarginProduct, SphereProduct
@@ -39,6 +40,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", default=None, type=str)
     parser.add_argument("--mode", default="normal", type=str)
+    parser.add_argument("--port", default=8000, type=int)  # visdom 服务器的端口
     args = parser.parse_args()
 
     min_loss = 999999
@@ -55,11 +57,7 @@ if __name__ == '__main__':
         opt.test_size = 3
         opt.print_freq = 1
 
-    if opt.display:
-        try:
-            visualizer = Visualizer()
-        except:
-            logger.exception("创建Visualizer连接失败")
+    visualizer = Visualizer(opt)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
     logger.info("训练使用:%r", device)
@@ -70,7 +68,7 @@ if __name__ == '__main__':
                                   shuffle=True,
                                   num_workers=opt.num_workers)
 
-    logger.info('每个Epoch有%d个批次，每个批次%d张',len(trainloader),opt.train_batch_size)
+    logger.info('每个Epoch有%d个批次，每个批次%d张', len(trainloader), opt.train_batch_size)
 
     if opt.loss == 'focal_loss':
         criterion = FocalLoss(gamma=2)
@@ -89,7 +87,7 @@ if __name__ == '__main__':
     elif opt.metric == 'arc_margin':
         # easy_margin = False
         # 你注意这个细节，这个是一个网络中的"层";需要传入num_classes，也就是说，多少个人的人脸就是多少类
-        metric_fc = ArcMarginProduct(512, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin,device=device)
+        metric_fc = ArcMarginProduct(512, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
     elif opt.metric == 'sphere':
         metric_fc = SphereProduct(512, opt.num_classes, m=4)
     else:
@@ -121,8 +119,8 @@ if __name__ == '__main__':
 
         for step_of_epoch, data in enumerate(trainloader):
             # 这个是为了测试方便，只截取很短的数据训练
-            if step_of_epoch>opt.test_size:
-                logger.info("当前epoch内step[%d] > 训练最大数量[%d]，此epoch提前结束",step_of_epoch,opt.test_size)
+            if step_of_epoch > opt.test_size:
+                logger.info("当前epoch内step[%d] > 训练最大数量[%d]，此epoch提前结束", step_of_epoch, opt.test_size)
                 break
 
             data_input, label = data
@@ -153,9 +151,9 @@ if __name__ == '__main__':
                             loss.item(),
                             train_batch_acc)
 
-                if opt.display and visualizer:
-                    visualizer.display_current_results(total_steps, loss.item(), name='train_loss')
-                    visualizer.display_current_results(total_steps, train_batch_acc, name='train_acc')
+                if visualizer:
+                    visualizer.write(total_steps, loss.item(), name='train_loss')
+                    visualizer.write(total_steps, train_batch_acc, name='train_acc')
 
                 start = time.time()
 
@@ -173,6 +171,6 @@ if __name__ == '__main__':
         # save_model(epoch, model,train_size,loss,acc):
         early_stopper.decide(acc, save_model, epoch + 1, model, train_size, latest_loss, acc)
 
-        if opt.display and visualizer:
+        if visualizer:
             total_steps = (epoch + 1) * train_size
-            visualizer.display_current_results(total_steps, acc, name='test_acc')
+            visualizer.write(total_steps, acc, name='test_acc')
