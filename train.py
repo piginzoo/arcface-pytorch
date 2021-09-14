@@ -86,7 +86,8 @@ if __name__ == '__main__':
         metric_fc = AddMarginProduct(512, opt.num_classes, s=30, m=0.35)
     elif opt.metric == 'arc_margin':
         # easy_margin = False
-        # 你注意这个细节，这个是一个网络中的"层";需要传入num_classes，也就是说，多少个人的人脸就是多少类
+        # 你注意这个细节，这个是一个网络中的"层";需要传入num_classes，也就是说，多少个人的人脸就是多少类，这里大概是1万左右（不同数据集不同）
+        # 另外第一个入参是输入维度，是512，why？是因为resnet50网络的最后的输出就是512：self.fc5 = nn.Linear(512 * 8 * 8, 512)
         metric_fc = ArcMarginProduct(512, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
     elif opt.metric == 'sphere':
         metric_fc = SphereProduct(512, opt.num_classes, m=4)

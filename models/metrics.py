@@ -2,12 +2,13 @@ from __future__ import division
 from __future__ import print_function
 
 import math
-
+import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
 
+logger = logging.getLogger(__name__)
 
 class ArcMarginProduct(nn.Module):
     """Implement of large margin arc distance: :
@@ -20,8 +21,8 @@ class ArcMarginProduct(nn.Module):
 
     def __init__(self, in_features, out_features, s=30.0, m=0.50, easy_margin=False,device='cuda'):
         super(ArcMarginProduct, self).__init__()
-        self.in_features = in_features
-        self.out_features = out_features
+        self.in_features = in_features # 入参是人脸向量，512，定死了
+        self.out_features = out_features # 这个就是人脸分类，1万多，就是不同人
         self.s = s
         self.m = m
         self.weight = Parameter(torch.FloatTensor(out_features, in_features))
@@ -45,6 +46,7 @@ class ArcMarginProduct(nn.Module):
         - cos(θ) = X*W/|X|*|W|
         """
 
+        logger.debug("[网络输出]arcface的loss的输入x：%r",input.shape)
         # --------------------------- cos(θ) & phi(θ) ---------------------------
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))  # |x| * |w|
         sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(0,
@@ -63,6 +65,8 @@ class ArcMarginProduct(nn.Module):
                     (1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
         output *= self.s
         # print(output)
+
+        logger.debug("[网络输出]arcface的loss最终结果：%r", output)
 
         return output
 

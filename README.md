@@ -16,6 +16,7 @@ build出来我们自己的训练容器：[arcface.img:v1]。
 - 构建了上述的训练容器，方便pytorch1.7-gpu版本的训练
 - 实现了一个ealystop，来方便早停
 - 改造了Visualizer，方便与容器外的visdom服务器通讯
+- 还增加了tensorboard的支持，作为visdom的备份（visdom不好用）
 - 改造了数据集加载，配合使用下面说的数据集加载
 
 # 数据

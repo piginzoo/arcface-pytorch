@@ -13,6 +13,7 @@ import time
 import cv2
 import numpy as np
 import torch
+from config.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +32,10 @@ def load_image(image_path):
 
     # 做resize、变黑白（前面做了）、归一化3件事
     # resize
-    image = cv2.resize(image, (128, 128))
-    image = np.dstack((image, np.fliplr(image))) # fliplr函数将矩阵进行左右翻转
-    image = image.transpose((2, 0, 1))
-    image = image[:, np.newaxis, :, :]
+    image = cv2.resize(image, Config().input_shape[1:])
+    # image = np.dstack((image, np.fliplr(image))) # fliplr函数将矩阵进行左右翻转 <-- 不知道要干嘛？！，注释掉先
+    # image = image.transpose((2, 0, 1)) # 不需要了
+    image = image[:, np.newaxis, :, :] # 扩成3维度[1,H,W]
     image = image.astype(np.float32, copy=False)
     # 归一化
     image -= 127.5

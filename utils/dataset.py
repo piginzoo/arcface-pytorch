@@ -19,7 +19,7 @@ class Dataset(data.Dataset):
     所以，Dataset重要的工作，就是如何加载一条数据
     """
 
-    def __init__(self, root, data_list_file, phase='train', input_shape=(1, 128, 128)):
+    def __init__(self, root, data_list_file, phase, input_shape):
         self.phase = phase
         self.input_shape = input_shape
 
@@ -46,9 +46,9 @@ class Dataset(data.Dataset):
 
         if self.phase == 'train':
             # torchvision:PyTorch框架中有一个非常重要且好用的包
-            self.transforms = T.Compose([ # 感觉是做了增强，不细看了
-                T.RandomCrop(self.input_shape[1:]),
-                T.RandomHorizontalFlip(),
+            self.transforms = T.Compose([           # 做增强
+                T.RandomCrop(self.input_shape[1:]), #
+                T.RandomHorizontalFlip(),           # 把图片水平方向翻过来，有点像镜子里看
                 T.ToTensor(),
                 normalize
             ])
