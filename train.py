@@ -56,7 +56,10 @@ if __name__ == '__main__':
         opt.print_freq = 1
 
     if opt.display:
-        visualizer = Visualizer()
+        try:
+            visualizer = Visualizer()
+        except:
+            logger.exception("创建Visualizer连接失败")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
     logger.info("训练使用:%r", device)
@@ -150,9 +153,9 @@ if __name__ == '__main__':
                             loss.item(),
                             train_batch_acc)
 
-                if opt.display:
+                if opt.display and visualizer:
                     visualizer.display_current_results(total_steps, loss.item(), name='train_loss')
-                    visualizer.display_current_results(total_steps, acc, name='train_acc')
+                    visualizer.display_current_results(total_steps, train_batch_acc, name='train_acc')
 
                 start = time.time()
 
@@ -170,6 +173,6 @@ if __name__ == '__main__':
         # save_model(epoch, model,train_size,loss,acc):
         early_stopper.decide(acc, save_model, epoch + 1, model, train_size, latest_loss, acc)
 
-        if opt.display:
+        if opt.display and visualizer:
             total_steps = (epoch + 1) * train_size
             visualizer.display_current_results(total_steps, acc, name='test_acc')

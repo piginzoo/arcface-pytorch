@@ -1,5 +1,21 @@
 # 人脸比较-arcface
 
+# 训练
+
+我们使用了CeleBa的训练集（20万张），LFW的验证集（6000张）。
+
+由于我们服务器上是CUDA7，对应pytorch是1.0，程序有很多问题。
+于是，我们使用了docker方式训练（docker可以封装CUDA，且像显卡驱动低版本兼容），
+我们使用了tensorflow2.0-gpu的容器，然后跑了一个[Dockerfile](deploy/Dockerfile)，
+build出来我们自己的训练容器：[arcface.img:v1]。
+然后使用命令[train.docker](bin/train.docker)，会启动容器进行训练。
+
+# 改进
+- 构建了上述的训练容器，方便pytorch1.7-gpu版本的训练
+- 实现了一个ealystop，来方便早停
+- 改造了Visualizer，方便与容器外的visdom服务器通讯
+- 改造了数据集加载，配合使用下面说的数据集加载
+
 # 数据
 
 旧代码用的训练集是Webface数据：[CASIA-webface](https://paperswithcode.com/dataset/casia-webface)做训练集，

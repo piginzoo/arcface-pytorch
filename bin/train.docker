@@ -16,7 +16,9 @@ TRAIN_DIR=/app/data/face/CelebA/
 VAL_DIR=/app/data/face/lfw/
 GPU_OPT="--runtime=nvidia"
 DAEMON=""
-PROXY="--env http_proxy=http://172.17.0.1:8123 --env https_proxy=http://172.17.0.1:8123 --env HTTP_PROXY=http://172.17.0.1:8123 --env HTTPS_PROXY=http://172.17.0.1:8123"
+PROXY=""
+# 为什么需要代理呢？不需要啊，这里先注释掉，保留。
+# PROXY="--env http_proxy=http://172.17.0.1:8123 --env https_proxy=http://172.17.0.1:8123 --env HTTP_PROXY=http://172.17.0.1:8123 --env HTTPS_PROXY=http://172.17.0.1:8123"
 
 
 if [ "$2" == "local" ]; then
@@ -49,6 +51,7 @@ FULL_CMD="
     -v $TRAIN_DIR:/root/arcface/data/train
     -v $VAL_DIR:/root/arcface/data/val
     --name arcface_train
+    --network host
     --workdir /root/arcface
     arcface.img:v1
     $CMD

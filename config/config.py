@@ -11,7 +11,7 @@ class Config(object):
     use_se = False
     loss = 'focal_loss'
 
-    display = False
+    display = True
     finetune = False
 
     # train_root = '/data/Datasets/webface/CASIA-maxpy-clean-crop-144/'
