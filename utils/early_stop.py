@@ -14,7 +14,7 @@ class EarlyStop():
     def evaluate(self,value):
 
         if value> self.best_value:
-            logger.debug("[早停] 新值%f>旧值%f，记录最好的，继续训练",value,self.best_value)
+            logger.debug("[早停] 新值%.4f>旧值%.4f，记录最好的，继续训练",value,self.best_value)
             # 所有的都重置
             self.retry_counter = 0
             self.best_value = value

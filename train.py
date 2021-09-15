@@ -57,7 +57,9 @@ if __name__ == '__main__':
         opt.test_size = 3
         opt.print_freq = 1
 
+
     visualizer = Visualizer(opt)
+
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
     logger.info("训练使用:%r", device)
@@ -114,10 +116,13 @@ if __name__ == '__main__':
     scheduler = StepLR(optimizer, step_size=opt.lr_step, gamma=0.1)
     early_stopper = EarlyStop(opt.early_stop)
 
-    start = time.time()
     train_size = len(trainloader)
     latest_loss = 99999
+    total_steps = 0
+    start = time.time()
+
     for epoch in range(opt.max_epoch):
+
         scheduler.step()
         model.train()
 
@@ -148,9 +153,9 @@ if __name__ == '__main__':
                 output = np.argmax(output, axis=1)
                 label = label.data.cpu().numpy()
                 train_batch_acc = np.mean((output == label).astype(int))
-                speed = opt.print_freq / (time.time() - start)
+                speed = total_steps / (time.time() - start)
                 time_str = time.asctime(time.localtime(time.time()))
-                logger.info("Epoch[%s],迭代[%d],速度[%.0f],loss[%.4f],batch_acc[%.4f]",
+                logger.info("Epoch[%s],迭代[%d],速度[%.0f步/秒],loss[%.4f],batch_acc[%.4f]",
                             epoch,
                             total_steps,
                             speed,
@@ -171,6 +176,7 @@ if __name__ == '__main__':
                         epoch,
                         latest_loss,
                         min_loss)
+            min_loss = latest_loss
             save_model(epoch, model, train_size, latest_loss, acc)
 
         # early_stopper可以帮助存基于acc的best模型
@@ -180,3 +186,8 @@ if __name__ == '__main__':
         if visualizer:
             total_steps = (epoch + 1) * train_size
             visualizer.write(total_steps, acc, name='test_acc')
+
+    logger.info("训练结束，耗时%.2f小时，共%d个epochs，%d步",
+                (time.time()-start)/3600,
+                epoch,
+                total_steps)

@@ -133,9 +133,9 @@ def test(model, opt):
 
     s = time.time()
     image_feature_dicts = calculate_features(model, face_image_paths)
-    logger.debug("人脸的特征shape：%r", len(image_feature_dicts))
+    logger.debug("人脸的特征维度：%r", len(image_feature_dicts))
     t = time.time() - s
-    logger.info('耗时: {}, 每张耗时：{}'.format(t, t / len(image_feature_dicts)))
+    logger.info('耗时: %.2f秒, 每张耗时：%.4f秒',t, t / len(image_feature_dicts))
 
     acc, th = test_performance(image_feature_dicts, face1_face2_label_list)
     logger.info("测试%d对人脸，（最好）正确率%.2f，(适配出来的最好的阈值%.2f)", len(face1_face2_label_list), acc, th)
