@@ -189,5 +189,5 @@ if __name__ == '__main__':
 
     logger.info("训练结束，耗时%.2f小时，共%d个epochs，%d步",
                 (time.time()-start)/3600,
-                epoch,
+                epoch+1,
                 total_steps)

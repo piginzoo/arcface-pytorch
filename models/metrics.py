@@ -48,7 +48,7 @@ class ArcMarginProduct(nn.Module):
         - cos(θ) = X*W/|X|*|W|
         """
 
-        logger.debug("[网络输出]arcface的loss的输入x：%r", input.shape)
+        # logger.debug("[网络输出]arcface的loss的输入x：%r", input.shape)
         # --------------------------- cos(θ) & phi(θ) ---------------------------
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))  # |x| * |w|
         sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(0,
@@ -68,7 +68,7 @@ class ArcMarginProduct(nn.Module):
         output *= self.s
         # print(output)
 
-        logger.debug("[网络输出]arcface的loss最终结果：%r", output.shape)
+        # logger.debug("[网络输出]arcface的loss最终结果：%r", output.shape)
 
         return output
 
