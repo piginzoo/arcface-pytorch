@@ -13,13 +13,13 @@ import time
 import cv2
 import numpy as np
 import torch
+
 from config.config import Config
 
 logger = logging.getLogger(__name__)
 
 
 def load_image(image_path):
-
     if not os.path.exists(image_path):
         logger.warning("图片路径不存在：%s", image_path)
         return None
@@ -33,9 +33,7 @@ def load_image(image_path):
     # 做resize、变黑白（前面做了）、归一化3件事
     # resize
     image = cv2.resize(image, Config().input_shape[1:])
-    # image = np.dstack((image, np.fliplr(image))) # fliplr函数将矩阵进行左右翻转 <-- 不知道要干嘛？！，注释掉先
-    # image = image.transpose((2, 0, 1)) # 不需要了
-    image = image[:, np.newaxis, :, :] # 扩成3维度[1,H,W]
+    image = image[np.newaxis, :, :]  # 扩成3维度[1,H,W]
     image = image.astype(np.float32, copy=False)
     # 归一化
     image -= 127.5
@@ -50,9 +48,10 @@ def calculate_features(model, image_paths):
         image = load_image(image_path)
         if image is None: continue
 
-        # data = torch.from_numpy(np.array([image]))
-        data = torch.from_numpy(image)
-        # data = data.to(torch.device("cuda"))
+        data = np.array([image])
+        data = torch.from_numpy(data)
+        logger.debug("模型要求输入：%r", list(model.parameters())[0].shape)
+        logger.debug("推断实际输入：%r", data.shape)
         feature = model(data)[0]
         feature = feature.data.cpu().numpy()
         image_feature_dict[name] = feature

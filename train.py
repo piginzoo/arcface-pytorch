@@ -4,7 +4,7 @@ import argparse
 import datetime
 import logging
 import time
-
+from torchsummary import summary
 import numpy as np
 import torch
 from torch import nn  # StepLR是调整学习率的
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     elif opt.backbone == 'resnet34':
         model = resnet34()
     elif opt.backbone == 'resnet50':
-        model = resnet50()
+        model = resnet50(opt)
 
     if opt.metric == 'add_margin':
         metric_fc = AddMarginProduct(512, opt.num_classes, s=30, m=0.35)
@@ -97,9 +97,12 @@ if __name__ == '__main__':
     # view_model(model, opt.input_shape)
     model.to(device)
     model = DataParallel(model)
+
     # 为何loss，也需要用这么操作一下？
     metric_fc.to(device)  # 用xxx设备
     metric_fc = DataParallel(metric_fc)  # 走并行模式
+
+    summary(model, opt.input_shape)
 
     if opt.optimizer == 'sgd':
         optimizer = torch.optim.SGD([{'params': model.parameters()}, {'params': metric_fc.parameters()}],
@@ -127,6 +130,8 @@ if __name__ == '__main__':
             data_input, label = data
             data_input = data_input.to(device)
             label = label.to(device).long()
+            # logger.debug("【训练】训练数据：%r",data_input.shape)
+            # logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
             feature = model(data_input)
             output = metric_fc(feature, label)
             loss = criterion(output, label)
@@ -159,7 +164,7 @@ if __name__ == '__main__':
                 start = time.time()
 
         model.eval()
-        acc = test(model, opt)
+        acc = test(model, opt) # <---- 预测
 
         if latest_loss < min_loss:
             logger.info("Epoch[%d] loss[%.4f] 比之前 loss[%.4f] 更低，保存模型",

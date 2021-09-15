@@ -1,13 +1,13 @@
-import os
 import logging
-import cv2
+import os
+
 import numpy as np
-import torchvision
 from PIL import Image
 from torch.utils import data
-from torchvision import transforms as T # PyTorch框架中有一个非常重要且好用的包
+from torchvision import transforms as T  # PyTorch框架中有一个非常重要且好用的包
 
 logger = logging.getLogger(__name__)
+
 
 class Dataset(data.Dataset):
     """
@@ -34,21 +34,21 @@ class Dataset(data.Dataset):
             if not os.path.exists(__img_path):
                 # logger.debug("%s 不存在",__img_path)
                 continue
-            filtered_imgs.append([__img_path,label])
-        logger.debug("过滤后，共加载图片%d张" , len(filtered_imgs))
+            filtered_imgs.append([__img_path, label])
+        logger.debug("过滤后，共加载图片%d张", len(filtered_imgs))
 
-        self.imgs = np.random.permutation(filtered_imgs) # 打乱顺序
+        self.imgs = np.random.permutation(filtered_imgs)  # 打乱顺序
 
         # normalize = T.Normalize(mean=[0.5, 0.5, 0.5],
         #                         std=[0.5, 0.5, 0.5])
 
-        normalize = T.Normalize(mean=[0.5], std=[0.5]) # ????，不知道normal成啥样了
+        normalize = T.Normalize(mean=[0.5], std=[0.5])  # ????，不知道normal成啥样了
 
         if self.phase == 'train':
             # torchvision:PyTorch框架中有一个非常重要且好用的包
-            self.transforms = T.Compose([           # 做增强
-                T.RandomCrop(self.input_shape[1:]), #
-                T.RandomHorizontalFlip(),           # 把图片水平方向翻过来，有点像镜子里看
+            self.transforms = T.Compose([  # 做增强
+                T.RandomCrop(self.input_shape[1:]),  #
+                T.RandomHorizontalFlip(),  # 把图片水平方向翻过来，有点像镜子里看
                 T.ToTensor(),
                 normalize
             ])
@@ -60,42 +60,13 @@ class Dataset(data.Dataset):
             ])
 
     def __getitem__(self, index):
-        img_path,label = self.imgs[index] # 这里面是图片路径
-        data = Image.open(img_path) # 加载图片
-        data = data.convert('L') # a greyscale ("L") ，L是灰度图像
+        img_path, label = self.imgs[index]  # 这里面是图片路径
+        data = Image.open(img_path)  # 加载图片
+        data = data.convert('L')  # a greyscale ("L") ，L是灰度图像
         data = self.transforms(data)
         label = np.int32(label)
+        # logger.debug("训练数据：%r", data.shape)
         return data.float(), label
 
     def __len__(self):
         return len(self.imgs)
-
-
-if __name__ == '__main__':
-    dataset = Dataset(root='/data/Datasets/fv/dataset_v1.1/dataset_mix_aligned_v1.1',
-                      data_list_file='/data/Datasets/fv/dataset_v1.1/mix_20w.txt',
-                      phase='sandbox',
-                      input_shape=(1, 128, 128))
-
-    trainloader = data.DataLoader(dataset, batch_size=10)
-    for i, (data, label) in enumerate(trainloader):
-        # imgs, labels = data
-        # print imgs.numpy().shape
-        # print data.cpu().numpy()
-        # if i == 0:
-        img = torchvision.utils.make_grid(data).numpy()
-        # print img.shape
-        # print label.shape
-        # chw -> hwc
-        img = np.transpose(img, (1, 2, 0))
-        # img *= np.array([0.229, 0.224, 0.225])
-        # img += np.array([0.485, 0.456, 0.406])
-        img += np.array([1, 1, 1])
-        img *= 127.5
-        img = img.astype(np.uint8)
-        img = img[:, :, [2, 1, 0]]
-
-        cv2.imshow('img', img)
-        cv2.waitKey()
-        # break
-        # dst.decode_segmap(labels.numpy()[0], plot=True)

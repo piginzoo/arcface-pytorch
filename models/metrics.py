@@ -1,14 +1,13 @@
-from __future__ import division
-from __future__ import print_function
-
-import math
 import logging
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
 
 logger = logging.getLogger(__name__)
+
 
 class ArcMarginProduct(nn.Module):
     """Implement of large margin arc distance: :
@@ -19,10 +18,10 @@ class ArcMarginProduct(nn.Module):
             m: margin 是一个角度的margin，你可以理解是一段弧长
     """
 
-    def __init__(self, in_features, out_features, s=30.0, m=0.50, easy_margin=False,device='cuda'):
+    def __init__(self, in_features, out_features, s=30.0, m=0.50, easy_margin=False, device='cuda'):
         super(ArcMarginProduct, self).__init__()
-        self.in_features = in_features # 入参是人脸向量，512，定死了
-        self.out_features = out_features # 这个就是人脸分类，1万多，就是不同人
+        self.in_features = in_features  # 入参是人脸向量，512，定死了
+        self.out_features = out_features  # 这个就是人脸分类，1万多，就是不同人
         self.s = s
         self.m = m
         self.weight = Parameter(torch.FloatTensor(out_features, in_features))
@@ -37,6 +36,9 @@ class ArcMarginProduct(nn.Module):
 
     def forward(self, input, label):
         """
+        @param input: 512维向量
+        @param label:
+
         其实就是在实现 sotfmax中的子项 exp( s * cos(θ + m) )，
         但是因为cos里面是个和：θ + m
         所以要和差化积，就得分解成：
@@ -46,7 +48,7 @@ class ArcMarginProduct(nn.Module):
         - cos(θ) = X*W/|X|*|W|
         """
 
-        logger.debug("[网络输出]arcface的loss的输入x：%r",input.shape)
+        logger.debug("[网络输出]arcface的loss的输入x：%r", input.shape)
         # --------------------------- cos(θ) & phi(θ) ---------------------------
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))  # |x| * |w|
         sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(0,
@@ -58,15 +60,15 @@ class ArcMarginProduct(nn.Module):
             phi = torch.where(cosine > self.th, phi, cosine - self.mm)
         # --------------------------- convert label to one-hot ---------------------------
         # one_hot = torch.zeros(cosine.size(), requires_grad=True, device='cuda')
-        one_hot = torch.zeros(cosine.size(),device=self.device)
+        one_hot = torch.zeros(cosine.size(), device=self.device)
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
         output = (one_hot * phi) + (
-                    (1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
+                (1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
         output *= self.s
         # print(output)
 
-        logger.debug("[网络输出]arcface的loss最终结果：%r", output)
+        logger.debug("[网络输出]arcface的loss最终结果：%r", output.shape)
 
         return output
 

@@ -3,7 +3,7 @@ import sys
 
 class Config(object):
     env = 'default'
-    backbone = 'resnet18'
+    backbone = 'resnet50'
     classify = 'softmax'
     num_classes = 10177  # webface数据集10575,celeba数据集10177个分类
     metric = 'arc_margin'
@@ -34,7 +34,7 @@ class Config(object):
 
     # 对celeba数据集原图是178x218=>(170,170)，对lfw和webface原图是250x250=>(240,240)，
     # 原来程序给的128x128肯定是不合适的，会切丢的，他切是按照原尺寸和目标尺寸之间的间隙随机动，所以原图和目标size相差不能太大（参加RandomCrop源码）
-    input_shape = (1, 170, 170)
+    input_shape = (1, 160, 160)
 
     optimizer = 'sgd'
 
