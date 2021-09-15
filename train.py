@@ -125,7 +125,7 @@ if __name__ == '__main__':
 
         scheduler.step()
         model.train()
-
+        epoch_start = time.time()
         for step_of_epoch, data in enumerate(trainloader):
             # 这个是为了测试方便，只截取很短的数据训练
             if step_of_epoch > opt.test_size:
@@ -155,8 +155,9 @@ if __name__ == '__main__':
                 train_batch_acc = np.mean((output == label).astype(int))
                 speed = total_steps / (time.time() - start)
                 time_str = time.asctime(time.localtime(time.time()))
-                logger.info("Epoch[%s],迭代[%d],速度[%.0f步/秒],loss[%.4f],batch_acc[%.4f]",
+                logger.info("Epoch[%s]耗时%.2f秒,迭代[%d],速度[%.0f步/秒],loss[%.4f],batch_acc[%.4f]",
                             epoch,
+                            epoch_start - time.time(),
                             total_steps,
                             speed,
                             loss.item(),
