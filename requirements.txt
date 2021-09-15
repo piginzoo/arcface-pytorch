@@ -3,3 +3,4 @@ visdom
 matplotlib
 sklearn
 graphviz
+torchsummary
