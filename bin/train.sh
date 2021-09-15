@@ -20,7 +20,7 @@ then
     CUDA_VISIBLE_DEVICES=0 \
       python train.py \
       --name arcface \
-      --mode normal
+      --mode normal>logs/console.log
 else
     echo "无法识别的模式：$1"
 fi
