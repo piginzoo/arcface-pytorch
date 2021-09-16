@@ -88,6 +88,7 @@ def main(args):
 
         epoch_start = time.time()
         for step_of_epoch, data in enumerate(trainloader):
+
             # 这个是为了测试方便，只截取很短的数据训练
             if train_size and step_of_epoch > train_size:
                 logger.info("当前epoch内step[%d] > 训练最大数量[%d]，此epoch提前结束", step_of_epoch, train_size)
