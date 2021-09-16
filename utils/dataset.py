@@ -35,7 +35,7 @@ class Dataset(data.Dataset):
                 # logger.debug("%s 不存在",__img_path)
                 continue
             filtered_imgs.append([__img_path, label])
-        logger.debug("过滤后，共加载图片%d张", len(filtered_imgs))
+        # logger.debug("过滤后，共加载图片%d张", len(filtered_imgs))
 
         self.imgs = np.random.permutation(filtered_imgs)  # 打乱顺序
 
@@ -59,10 +59,10 @@ class Dataset(data.Dataset):
     def __getitem__(self, index):
         img_path, label = self.imgs[index]  # 这里面是图片路径
         image = Image.open(img_path)
-        logger.debug("加载图片：%s", img_path)
+        # logger.debug("加载图片：%s", img_path)
         image = self.transforms(image)
         label = np.int32(label)
-        logger.debug("训练数据：%r", image.shape)
+        # logger.debug("训练数据：%r", image.shape)
         return image, label
 
     def __len__(self):
