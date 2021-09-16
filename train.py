@@ -114,10 +114,10 @@ def main(args):
                     label = label.data.cpu().numpy()
                     train_batch_acc = np.mean((output == label).astype(int))
                     speed = total_steps / (time.time() - start)
-                    logger.info("Epoch[%s]耗时%.2f秒,迭代[%d],速度[%.0f步/秒],loss[%.4f],batch_acc[%.4f]",
+                    logger.info("Epoch[%s]/迭代[%d],耗时%.2f秒,速度[%.0f步/秒],loss[%.4f],batch_acc[%.4f]",
                                 epoch,
-                                epoch_start - time.time(),
                                 total_steps,
+                                time.time() - epoch_start,
                                 speed,
                                 loss.item(),
                                 train_batch_acc)
@@ -144,13 +144,13 @@ def main(args):
                         latest_loss,
                         min_loss)
             min_loss = latest_loss
-            save_model(opt, epoch, model, train_size, latest_loss, acc)
+            save_model(opt, epoch, model, len(trainloader), latest_loss, acc)
 
         # early_stopper可以帮助存基于acc的best模型
-        early_stopper.decide(acc, save_model, opt, epoch + 1, model, train_size, latest_loss, acc)
+        early_stopper.decide(acc, save_model, opt, epoch + 1, model, len(trainloader), latest_loss, acc)
 
         if visualizer:
-            total_steps = (epoch + 1) * train_size
+            total_steps = (epoch + 1) * len(trainloader)
             visualizer.write(total_steps, acc, name='test_acc')
 
     logger.info("训练结束，耗时%.2f小时，共%d个epochs，%d步",
