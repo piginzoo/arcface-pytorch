@@ -17,9 +17,7 @@ VAL_DIR=/app/data/face/lfw/
 GPU_OPT="--runtime=nvidia"
 DAEMON=""
 PROXY=""
-# 为什么需要代理呢？不需要啊，这里先注释掉，保留。
-# PROXY="--env http_proxy=http://172.17.0.1:8123 --env https_proxy=http://172.17.0.1:8123 --env HTTP_PROXY=http://172.17.0.1:8123 --env HTTPS_PROXY=http://172.17.0.1:8123"
-
+PROXY="--env http_proxy=http://172.17.0.1:8123 --env https_proxy=http://172.17.0.1:8123 --env HTTP_PROXY=http://172.17.0.1:8123 --env HTTPS_PROXY=http://172.17.0.1:8123"
 
 if [ "$2" == "local" ]; then
     echo "本地（笔记本上，无显卡）调试模式 ..."
