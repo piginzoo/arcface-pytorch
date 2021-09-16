@@ -25,8 +25,18 @@ class FocalLoss(nn.Module):
         self.ce = torch.nn.CrossEntropyLoss()
 
     def forward(self, input, target):
-        logp = self.ce(input, target)
-        p = torch.exp(-logp)
-        # FL(p)=-alpha (1-p)^gamma * log(p)：alpha=1
-        loss = (1 - p) ** self.gamma * logp
+        # ce = -log(p) 参：https://zhuanlan.zhihu.com/p/27223959
+        ce = self.ce(input, target)
+
+        p = torch.exp(-ce) # p = e ^ (-ce)
+
+        # 参：https://blog.csdn.net/u014311125/article/details/109470137
+        # FL(p)=-alpha (1-p)^gamma * log(p)：
+        #      = alpha (1-p)^gamma * (-log(p))
+        #      = alpha (1-p)^gamma * ce
+        # alpha=1
+        #      = (1-p)^gamma * ce
+        # 注意最前面的负号没有了，隐含到ce中了，因为ce=-log(p)
+        loss = (1 - p) ** self.gamma * ce
+
         return loss.mean()
