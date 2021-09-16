@@ -48,6 +48,7 @@ FULL_CMD="
     -v $PWD:/root/arcface
     -v $TRAIN_DIR:/root/arcface/data/train
     -v $VAL_DIR:/root/arcface/data/val
+    -v /root/.cache:/root/.cache
     --name arcface_train
     --network host
     --workdir /root/arcface
