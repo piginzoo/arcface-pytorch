@@ -98,8 +98,8 @@ def main(args):
                 images, label = data
                 images = images.to(device)
                 label = label.to(device).long()
-                logger.debug("【训练】训练数据：%r", images.shape)
-                logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
+                # logger.debug("【训练】训练数据：%r", images.shape)
+                # logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
                 feature = model(images)
                 output = metric_fc(feature, label)
                 loss = criterion(output, label)
