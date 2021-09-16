@@ -5,7 +5,7 @@ class Config(object):
     env = 'default'
     backbone = 'resnet50'
     classify = 'softmax'
-    num_classes = 10177  # webface数据集10575,celeba数据集10177个分类
+    num_classes = 10177 + 1  # webface数据集10575,celeba数据集10177个分类, class+1, 防止越界
     metric = 'arc_margin'
     easy_margin = False
     use_se = False
