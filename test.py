@@ -10,42 +10,19 @@ import logging
 import os
 import time
 
-import cv2
 import numpy as np
 import torch
 
-from config.config import Config
+import utils
 
 logger = logging.getLogger(__name__)
-
-
-def load_image(image_path):
-    if not os.path.exists(image_path):
-        logger.warning("图片路径不存在：%s", image_path)
-        return None
-
-    # 加载成黑白照片
-    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    if image is None:
-        logger.warning("图片加载失败：%s", image_path)
-        return None
-
-    # 做resize、变黑白（前面做了）、归一化3件事
-    # resize
-    image = cv2.resize(image, Config().input_shape[1:])
-    image = image[np.newaxis, :, :]  # 扩成3维度[1,H,W]
-    image = image.astype(np.float32, copy=False)
-    # 归一化
-    image -= 127.5
-    image /= 127.5
-    return image
 
 
 def calculate_features(model, image_paths):
     image_feature_dict = {}
     for i, image_path in enumerate(image_paths):
         name = os.path.split(image_path)[1]
-        image = load_image(image_path)
+        image = utils.load_image(image_path)
         if image is None: continue
 
         data = np.array([image])
@@ -135,7 +112,7 @@ def test(model, opt):
     image_feature_dicts = calculate_features(model, face_image_paths)
     # logger.debug("人脸的特征维度：%r", len(image_feature_dicts))
     t = time.time() - s
-    logger.info('[验证]耗时: %.2f秒, 每张耗时：%.4f秒',t, t / len(image_feature_dicts))
+    logger.info('[验证]耗时: %.2f秒, 每张耗时：%.4f秒', t, t / len(image_feature_dicts))
 
     acc, th = test_performance(image_feature_dicts, face1_face2_label_list)
     logger.info("[验证]测试%d对人脸，（最好）正确率%.2f，(适配出来的最好的阈值%.2f)", len(face1_face2_label_list), acc, th)

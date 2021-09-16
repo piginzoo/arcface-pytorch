@@ -1,8 +1,11 @@
-import logging
-import os
 import os.path as ops
+import socket
 from logging import handlers
 
+import cv2
+from PIL import Image
+
+from config import Config
 from utils.view_model import *
 from utils.visualizer import *
 
@@ -33,9 +36,6 @@ def init_log(level=logging.DEBUG,
     return logger
 
 
-import socket
-
-
 def check_port_in_use(port, host='127.0.0.1'):
     s = None
     try:
@@ -48,3 +48,32 @@ def check_port_in_use(port, host='127.0.0.1'):
     finally:
         if s:
             s.close()
+
+
+def load_image(image_path):
+    """
+    使用cv2做处理：
+    1、BGR=>RGB
+    2、[H,W,3]=> [3,H,W]（注意，H在前，这和torch中要求的顺序一致：Image Tensor in the form [C, H, W].）
+    3、做Normalize
+    """
+    if not os.path.exists(image_path):
+        logger.warning("图片路径不存在：%s", image_path)
+        return None
+
+    # 加载成黑白照片
+    image = cv2.imread(image_path)
+    if image is None:
+        logger.warning("图片加载失败：%s", image_path)
+        return None
+
+    # resize
+    image = cv2.resize(image, Config().input_shape[1:])
+    image = image.astype(np.float32, copy=False)
+    # 归一化
+    image -= 127.5
+    image /= 127.5
+
+    image = np.transpose(image, (2, 0, 1))  # [H,W,3] => [3,W,H]
+    image = image[:,:,::-1] # BGR => RGB
+    return image

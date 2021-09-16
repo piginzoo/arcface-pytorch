@@ -10,6 +10,7 @@ import logging
 
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
+from torchvision import models
 
 logger = logging.getLogger(__name__)
 
@@ -223,24 +224,17 @@ class ResNet(nn.Module):
     def __init__(self, block, layers, config):
         self.inplanes = 64
         super(ResNet, self).__init__()
-        # self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-        #                        bias=False)
-        self.conv1 = nn.Conv2d(in_channels=1,
-                               out_channels=64,
-                               kernel_size=3,
-                               stride=1,
-                               padding=1,
-                               bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
-        # self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0], stride=2)
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
         # resnet18是缩小16倍，resnet50是缩小32倍，正好用 block.expansion 可以统一起来
-        self.fc5 = nn.Linear(512 * block.expansion * (config.input_shape[-1] // 16) ** 2, 512)
+        self.fc = nn.Linear(512 * block.expansion * (config.input_shape[-1] // 16) ** 2, 512)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -313,7 +307,21 @@ def resnet50(config, pretrained=False, **kwargs):
     """
     model = ResNet(block=Bottleneck, layers=[3, 4, 6, 3], config=config, **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+        logger.info("使用预训练的模型Resnet50")
+        # 然后选择使用的模型
+        model = models.resnet50(pretrained=True)
+
+        # resnet18仅有一个全连接层
+        # 得到该全连接层输入神经元数.in_features
+        fc_features = model.fc.in_features
+
+        # 默认的输出神经元数为1000，修改为自己想输出的人脸的向量，类别为2,即man和woman
+        # fc输入为 2048x1x1=2048,新fc输出为1024，参数量为1048576，100万个参数
+        # 本来我想直接用1000个分类的概率向量再接一个512的全链接呢，但是觉得2个全连接不好收敛，作罢
+        # 还是用经典的方式把，也是网上推荐的替换FC的。
+        # 这里有个细节：resnet50是把原图缩小到32倍，但是最后却成了1x1，原因是用了全局平均池化的缘故，这块也不动了，
+        # 所以无论你什么尺寸，最终都会被平均池化成1x1
+        model.fc = nn.Linear(fc_features, 512)
     return model
 
 

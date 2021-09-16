@@ -39,10 +39,7 @@ class Dataset(data.Dataset):
 
         self.imgs = np.random.permutation(filtered_imgs)  # 打乱顺序
 
-        # normalize = T.Normalize(mean=[0.5, 0.5, 0.5],
-        #                         std=[0.5, 0.5, 0.5])
-
-        normalize = T.Normalize(mean=[0.5], std=[0.5])  # ????，不知道normal成啥样了
+        normalize = T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
         if self.phase == 'train':
             # torchvision:PyTorch框架中有一个非常重要且好用的包
@@ -61,12 +58,12 @@ class Dataset(data.Dataset):
 
     def __getitem__(self, index):
         img_path, label = self.imgs[index]  # 这里面是图片路径
-        data = Image.open(img_path)  # 加载图片
-        data = data.convert('L')  # a greyscale ("L") ，L是灰度图像
-        data = self.transforms(data)
+        image = Image.open(img_path)
+        logger.debug("加载图片：%s", img_path)
+        image = self.transforms(image)
         label = np.int32(label)
-        # logger.debug("训练数据：%r", data.shape)
-        return data.float(), label
+        logger.debug("训练数据：%r", image.shape)
+        return image, label
 
     def __len__(self):
         return len(self.imgs)
