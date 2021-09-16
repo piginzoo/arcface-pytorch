@@ -35,6 +35,15 @@ def save_model(opt, epoch, model, train_size, loss, acc):
 def main(args):
     opt = Config()
 
+    # 准备数据
+    train_dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
+    trainloader = DataLoader(train_dataset,
+                             batch_size=opt.train_batch_size,
+                             shuffle=True,
+                             num_workers=opt.num_workers)
+    logger.info('每个Epoch有%d个批次，每个批次%d张', len(trainloader), opt.train_batch_size)
+    train_size = None
+
     # 准备调试参数
     if args.mode == "debug":
         logger.info("启动调试模式 >>>>> ")
@@ -44,15 +53,6 @@ def main(args):
         opt.test_size = 3
         opt.print_freq = 1
         train_size = 5
-
-    # 准备数据
-    train_dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
-    trainloader = DataLoader(train_dataset,
-                             batch_size=opt.train_batch_size,
-                             shuffle=True,
-                             num_workers=opt.num_workers)
-    logger.info('每个Epoch有%d个批次，每个批次%d张', len(trainloader), opt.train_batch_size)
-    train_size = len(trainloader)
 
     # 准备神经网络
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
@@ -89,7 +89,7 @@ def main(args):
         epoch_start = time.time()
         for step_of_epoch, data in enumerate(trainloader):
             # 这个是为了测试方便，只截取很短的数据训练
-            if step_of_epoch > train_size:
+            if train_size and step_of_epoch > train_size:
                 logger.info("当前epoch内step[%d] > 训练最大数量[%d]，此epoch提前结束", step_of_epoch, train_size)
                 break
 
