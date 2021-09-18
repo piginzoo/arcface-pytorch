@@ -11,14 +11,14 @@ from torch.utils.data import DataLoader
 from torchsummary import summary
 
 from config.config import Config
+from models import get_resnet
 from models.focal_loss import FocalLoss
 from models.metrics import ArcMarginProduct
-from models.resnet import resnet50
-from test import test
+from test import test, caculate_samples
 from utils import init_log
 from utils.dataset import Dataset
 from utils.early_stop import EarlyStop
-from utils.visualizer import Visualizer
+from utils.visualizer import Visualizer, TensorboardVisualizer
 
 logger = logging.getLogger(__name__)
 
@@ -47,21 +47,28 @@ def main(args):
     # 准备调试参数
     if args.mode == "debug":
         logger.info("启动调试模式 >>>>> ")
-        opt.train_batch_size = 1
-        opt.max_epoch = 2
+        opt.train_batch_size = 3
+        opt.max_epoch = 3
         opt.test_batch_size = 1
         opt.test_size = 3
         opt.print_freq = 1
+        opt.test_pair_size = 6
         train_size = 5
 
     # 准备神经网络
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
     logger.info("训练使用:%r", device)
     criterion = FocalLoss(gamma=2)
-    model = resnet50(opt, pretrained=True)
+    model = get_resnet(opt)
+
     # 你注意这个细节，这个是一个网络中的"层";需要传入num_classes，也就是说，多少个人的人脸就是多少类，这里大概是1万左右（不同数据集不同）
     # 另外第一个入参是输入维度，是512，why？是因为resnet50网络的最后的输出就是512：self.fc5 = nn.Linear(512 * 8 * 8, 512)
-    metric_fc = ArcMarginProduct(512, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
+    if opt.visualize:
+        # 可视化要求最后输出的维度不是512，而是2，是512之后再接个2
+        metric_fc = ArcMarginProduct(2, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
+    else:
+        metric_fc = ArcMarginProduct(512, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
+
     model.to(device)
     model = DataParallel(model)
     # 为何loss，也需要用这么操作一下？
@@ -75,7 +82,7 @@ def main(args):
     summary(model, opt.input_shape)
 
     # 其他准备
-    visualizer = Visualizer(opt)
+    visualizer = TensorboardVisualizer(opt.tensorboard_dir)
     min_loss = 999999
     latest_loss = 99999
     total_steps = 0
@@ -98,15 +105,23 @@ def main(args):
                 images, label = data
                 images = images.to(device)
                 label = label.to(device).long()
-                # logger.debug("【训练】训练数据：%r", images.shape)
-                # logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
+                logger.debug("【训练】训练数据：%r", images.shape)
+                logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
                 feature = model(images)
+                logger.debug("【训练】训练输出：%r", feature)
                 output = metric_fc(feature, label)
                 loss = criterion(output, label)
-                optimizer.zero_grad()  # 先把所有的梯度都清零？为何？
+
+                # 以SGD为例，是算一个batch计算一次梯度，然后进行一次梯度更新。这里梯度值就是对应偏导数的计算结果。
+                # 我们进行下一次batch梯度计算的时候，前一个batch的梯度计算结果，没有保留的必要了。
+                # 所以在下一次梯度更新的时候，先使用optimizer.zero_grad把梯度信息设置为0。
+                optimizer.zero_grad()
+
                 loss.backward()
+                torch.nn.utils.clip_grad_norm(model.parameters, 1, norm_type=2)
                 optimizer.step()
                 latest_loss = loss.item()
+
                 # 每隔N个batch，就算一下这个批次的正确率
                 if total_steps % opt.print_freq == 0:
                     output = output.data.cpu().numpy()
@@ -121,10 +136,10 @@ def main(args):
                                 speed,
                                 loss.item(),
                                 train_batch_acc)
-
                     if visualizer:
-                        visualizer.write(total_steps, loss.item(), name='train_loss')
-                        visualizer.write(total_steps, train_batch_acc, name='train_acc')
+                        visualizer.text(total_steps, loss.item(), name='train_loss')
+                        visualizer.text(total_steps, train_batch_acc, name='train_acc')
+                        visualizer.image(images,name="train_images")
             except:
                 logger.exception("训练出现异常，继续...")
 
@@ -151,7 +166,10 @@ def main(args):
 
         if visualizer:
             total_steps = (epoch + 1) * len(trainloader)
-            visualizer.write(total_steps, acc, name='test_acc')
+            visualizer.text(total_steps, acc, name='test_acc')
+
+            features = caculate_samples(model,opt)
+            # visualizer.plot_tf_embedding(features, name='test_acc',step=total_steps)
 
     logger.info("训练结束，耗时%.2f小时，共%d个epochs，%d步",
                 (time.time() - start) / 3600,

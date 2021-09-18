@@ -76,4 +76,6 @@ def load_image(image_path):
 
     image = np.transpose(image, (2, 0, 1))  # [H,W,3] => [3,W,H]
     image = image[:,:,::-1] # BGR => RGB
+
+    logger.debug("加载了图片: %s => %r", image_path, image.shape)
     return image

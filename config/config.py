@@ -3,7 +3,7 @@ import sys
 
 class Config(object):
     env = 'default'
-    backbone = 'resnet50'
+    backbone = 'resnet18'
     classify = 'softmax'
     num_classes = 10177 + 1  # webface数据集10575,celeba数据集10177个分类, class+1, 防止越界
     metric = 'arc_margin'
@@ -28,7 +28,8 @@ class Config(object):
     lfw_test_pair_path = 'data/val/lfw_test_pair.txt'
     test_model_path = 'checkpoints/resnet18_110.pth'
     test_batch_size = 60
-    test_size = sys.maxsize
+    test_pair_size = 300 # 测试300个正确对，150个同一人，150个不同人
+    test_classes = 10 # 只测试10个人的脸，用来打印embeding的softmax情况
 
     early_stop = 100
 
@@ -38,14 +39,14 @@ class Config(object):
 
     use_gpu = False  # use GPU or not
     gpu_id = '0, 1'
-    num_workers = 4  # how many workers for loading data
+    num_workers = 0  # how many workers for loading data
     print_freq = 1000  # print info every N batch
 
     debug_file = '/tmp/debug'  # if os.path.exists(debug_file): enter ipdb
     result_file = 'result.csv'
 
     max_epoch = 50
-    lr = 1e-1  # initial learning rate
+    lr = 1e-4  # initial learning rate
     lr_step = 10
     lr_decay = 0.95  # when val_loss increase, lr = lr*lr_decay
     weight_decay = 5e-4
@@ -54,3 +55,4 @@ class Config(object):
     tensorboard_dir = "logs/tboard"
     visdom_port = 8086
     visualizer = "tensorboard"
+    visualize = True

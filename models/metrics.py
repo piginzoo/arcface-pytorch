@@ -39,7 +39,7 @@ class ArcMarginProduct(nn.Module):
         @param input: 512维向量
         @param label:
 
-        其实就是在实现 sotfmax中的子项 exp( s * cos(θ + m) )，
+        其实就是在实现 softmax中的子项 exp( s * cos(θ + m) )，
         但是因为cos里面是个和：θ + m
         所以要和差化积，就得分解成：
         - exp( s * cos(θ + m) )
@@ -51,8 +51,8 @@ class ArcMarginProduct(nn.Module):
         # logger.debug("[网络输出]arcface的loss的输入x：%r", input.shape)
         # --------------------------- cos(θ) & phi(θ) ---------------------------
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))  # |x| * |w|
-        sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(0,
-                                                             1))  # clamp，min~max间，都夹到范围内 : https://blog.csdn.net/weixin_40522801/article/details/107904282
+        # clamp，min~max间，都夹到范围内 : https://blog.csdn.net/weixin_40522801/article/details/107904282
+        sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(0,1))
         phi = cosine * self.cos_m - sine * self.sin_m
         if self.easy_margin:
             phi = torch.where(cosine > 0, phi, cosine)
@@ -63,14 +63,12 @@ class ArcMarginProduct(nn.Module):
         one_hot = torch.zeros(cosine.size(), device=self.device)
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
-        output = (one_hot * phi) + (
-                (1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
+        # you can use torch.where if your torch.__version__ is 0.4
+        output = (one_hot * phi) + ((1.0 - one_hot) * cosine)
         output *= self.s
-        # print(output)
 
         # logger.debug("[网络输出]arcface的loss最终结果：%r", output.shape)
-
-        return output
+        return output # 输出是啥？？？
 
 
 class AddMarginProduct(nn.Module):

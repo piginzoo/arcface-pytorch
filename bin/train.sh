@@ -12,7 +12,7 @@ then
     CUDA_VISIBLE_DEVICES=0 \
     python train.py \
     --name arcface \
-    --mode debug
+    --mode debug 2>&1
 elif [ "$1" = "prod" ]
 then
     # 这个是用于docker的训练用的entry，CUDA_VISIBLE_DEVICES=0，因为显卡始终是第一块
