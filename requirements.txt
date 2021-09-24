@@ -4,3 +4,5 @@ matplotlib
 sklearn
 graphviz
 torchsummary
+tensorboard==1.15
+tensorflow==1.15
