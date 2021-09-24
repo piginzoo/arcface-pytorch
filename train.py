@@ -9,16 +9,17 @@ from torch.nn import DataParallel
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 from torchsummary import summary
+from torchvision import datasets, transforms
 
 from config.config import Config
 from models import get_resnet
 from models.focal_loss import FocalLoss
 from models.metrics import ArcMarginProduct
-from test import test, caculate_samples
+from test import MnistTester, FaceTester
 from utils import init_log
 from utils.dataset import Dataset
 from utils.early_stop import EarlyStop
-from utils.visualizer import Visualizer, TensorboardVisualizer
+from utils.visualizer import TensorboardVisualizer
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,23 @@ def save_model(opt, epoch, model, train_size, loss, acc):
 def main(args):
     opt = Config()
 
-    # 准备数据
-    train_dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
-    trainloader = DataLoader(train_dataset,
+    # 准备数据，如果mode是"visualize"，使用MNIST数据集
+    # 可视化，其实就是使用MNIST数据集，训练一个2维向量
+    # mnist数据，用于可视化的测试
+    if args.mode == "visualize":
+        logger.info("训练MNIST数据 >>>>> ")
+        dataset = datasets.MNIST('./data',
+                                 train=True,
+                                 download=True,
+                                 transform=transforms.Compose([
+                                     transforms.ToTensor(),
+                                     transforms.Normalize((0.1307,), (0.3081,))]))
+        tester = MnistTester()
+    else:
+        # 正常的人脸数据
+        dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
+        tester = FaceTester()
+    trainloader = DataLoader(dataset,
                              batch_size=opt.train_batch_size,
                              shuffle=True,
                              num_workers=opt.num_workers)
@@ -59,13 +74,13 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
     logger.info("训练使用:%r", device)
     criterion = FocalLoss(gamma=2)
-    model = get_resnet(opt)
+    model = get_resnet(opt, args.mode)
 
     # 你注意这个细节，这个是一个网络中的"层";需要传入num_classes，也就是说，多少个人的人脸就是多少类，这里大概是1万左右（不同数据集不同）
     # 另外第一个入参是输入维度，是512，why？是因为resnet50网络的最后的输出就是512：self.fc5 = nn.Linear(512 * 8 * 8, 512)
-    if opt.visualize:
+    if args.mode == "visualize":
         # 可视化要求最后输出的维度不是512，而是2，是512之后再接个2
-        metric_fc = ArcMarginProduct(2, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
+        metric_fc = ArcMarginProduct(2, 10, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
     else:
         metric_fc = ArcMarginProduct(512, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
 
@@ -109,7 +124,7 @@ def main(args):
                 logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
                 feature = model(images)
                 logger.debug("【训练】训练输出：%r", feature)
-                output = metric_fc(feature, label)
+                output = metric_fc(feature, label)  #
                 loss = criterion(output, label)
 
                 # 以SGD为例，是算一个batch计算一次梯度，然后进行一次梯度更新。这里梯度值就是对应偏导数的计算结果。
@@ -137,9 +152,10 @@ def main(args):
                                 loss.item(),
                                 train_batch_acc)
                     if visualizer:
+                        logger.info("保存可视化信息：第 %d 步", total_steps)
                         visualizer.text(total_steps, loss.item(), name='train_loss')
                         visualizer.text(total_steps, train_batch_acc, name='train_acc')
-                        visualizer.image(images,name="train_images")
+                        visualizer.image(images, name="train_images")
             except:
                 logger.exception("训练出现异常，继续...")
 
@@ -149,7 +165,7 @@ def main(args):
         acc = -1
         try:
             model.eval()
-            acc = test(model, opt)  # <---- 预测
+            acc = tester.acc(model, metric_fc, opt)  # <---- 预测
         except:
             logger.exception("验证出现异常，继续...")
 
@@ -165,11 +181,14 @@ def main(args):
         early_stopper.decide(acc, save_model, opt, epoch + 1, model, len(trainloader), latest_loss, acc)
 
         if visualizer:
+            logger.info("Epoch [%d] 结束可视化(保存softmax可视化)", epoch)
             total_steps = (epoch + 1) * len(trainloader)
             visualizer.text(total_steps, acc, name='test_acc')
 
-            features = caculate_samples(model,opt)
-            # visualizer.plot_tf_embedding(features, name='test_acc',step=total_steps)
+            if args.mode == "visualize":
+                features = tester.calculate_features(model, opt)
+                logger.debug("计算完的 [%d] 个人脸features", len(features))
+                visualizer.plot_2d_embedding(name='classes', features=features, step=total_steps)
 
     logger.info("训练结束，耗时%.2f小时，共%d个epochs，%d步",
                 (time.time() - start) / 3600,
@@ -180,7 +199,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", default=None, type=str)
-    parser.add_argument("--mode", default="normal", type=str)
+    parser.add_argument("--mode", default="normal", type=str)  # normal|
     args = parser.parse_args()
 
     logger.info("参数配置：%r", args)

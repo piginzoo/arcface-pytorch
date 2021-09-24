@@ -29,6 +29,9 @@ if [ "$2" == "local" ]; then
 elif [ "$2" == "debug" ]; then
     echo "服务器上的Debug模式，只跑很少的epochs ..."
     CMD="bin/train.sh debug"
+elif [ "$2" == "visualize" ]; then
+    echo "服务器上的Visualize模式，使用MNIST数据，跑可视化效果"
+    CMD="bin/train.sh visualize"
 elif [ "$2" == "term" ]; then
     echo "服务器上的Debug模式，只跑很少的epochs ..."
     CMD="/bin/bash"

@@ -55,4 +55,3 @@ class Config(object):
     tensorboard_dir = "logs/tboard"
     visdom_port = 8086
     visualizer = "tensorboard"
-    visualize = True

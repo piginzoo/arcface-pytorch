@@ -13,14 +13,12 @@ then
     python train.py \
     --name arcface \
     --mode debug 2>&1
-elif [ "$1" = "prod" ]
-then
-    # 这个是用于docker的训练用的entry，CUDA_VISIBLE_DEVICES=0，因为显卡始终是第一块
-    echo "Docker生产模式"
+else
+    # 这个是用于docker的训练用的entry，CUDA_VISIBLE_DEVICES=0，因为显卡始终是第一块，所以始终为0
+    echo "Docker生产模式: mode=$1"
     CUDA_VISIBLE_DEVICES=0 \
       python train.py \
       --name arcface \
-      --mode normal>logs/console.log 2>&1
-else
-    echo "无法识别的模式：$1"
+      --mode $1 2>&1
+#      --mode $1>logs/console.log 2>&1
 fi

@@ -9,6 +9,8 @@ from torchvision import transforms as T  # PyTorch框架中有一个非常重要
 logger = logging.getLogger(__name__)
 
 
+
+
 class Dataset(data.Dataset):
     """
     类teras的sequence，好熟悉那：https://pytorch.apachecn.org/docs/1.4/5.html

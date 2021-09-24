@@ -75,48 +75,55 @@ class TensorboardVisualizer(object):
 
     # https://www.cnblogs.com/cloud-ken/p/9329703.html
     # 生成可视化最终输出层向量所需要的日志文件
+    # 暂时不用了，太麻烦，还得搞sprite图啥的
     def plot_tf_embedding(self, features, name, step):
         """
         使用tensorflow的embeding API，直接输出高维向量
+        @:param features: List<List<feature[512]>>
+            list - 多个人
+                list - 一个人的
+                    feature 一个人的一张脸的
         """
+        for person in features:
+            for feature in person:
+                    # 使用一个新的变量来保存最终输出层向量的结果，
+                    # 因为embedding是通过Tensorflow中变量完成的，
+                    # 所以PROJECTOR可视化的都是TensorFlow中的变量，
+                    # 所以这里需要新定义一个变量来保存输出层向量的取值
+                    y = tf.Variable(feature, name="face")
 
-        # 使用一个新的变量来保存最终输出层向量的结果，
-        # 因为embedding是通过Tensorflow中变量完成的，
-        # 所以PROJECTOR可视化的都是TensorFlow中的变量，
-        # 所以这里需要新定义一个变量来保存输出层向量的取值
-        y = tf.Variable(features, name="face")
+                    # 通过project.ProjectorConfig类来帮助生成日志文件
+                    config = projector.ProjectorConfig()
+                    # 增加一个需要可视化的bedding结果
+                    embedding = config.embeddings.add()
+                    # 指定这个embedding结果所对应的Tensorflow变量名称
+                    embedding.tensor_name = y.name
 
-        # 通过project.ProjectorConfig类来帮助生成日志文件
-        config = projector.ProjectorConfig()
-        # 增加一个需要可视化的bedding结果
-        embedding = config.embeddings.add()
-        # 指定这个embedding结果所对应的Tensorflow变量名称
-        embedding.tensor_name = y.name
+                    # Specify where you find the metadata
+                    # 指定embedding结果所对应的原始数据信息。
+                    # 比如这里指定的就是每一张MNIST测试图片对应的真实类别。
+                    # 在单词向量中可以是单词ID对应的单词。
+                    # 这个文件是可选的，如果没有指定那么向量就没有标签。
+                    # embedding.metadata_path = META_FIEL
 
-        # Specify where you find the metadata
-        # 指定embedding结果所对应的原始数据信息。
-        # 比如这里指定的就是每一张MNIST测试图片对应的真实类别。
-        # 在单词向量中可以是单词ID对应的单词。
-        # 这个文件是可选的，如果没有指定那么向量就没有标签。
-        # embedding.metadata_path = META_FIEL
+                    # Specify where you find the sprite (we will create this later)
+                    # 指定sprite 图像。这个也是可选的，如果没有提供sprite 图像，那么可视化的结果
+                    # 每一个点就是一个小困点，而不是具体的图片。
+                    # embedding.sprite.image_path = SPRITE_FILE
+                    # 在提供sprite图像时，通过single_image_dim可以指定单张图片的大小。
+                    # 这将用于从sprite图像中截取正确的原始图片。
+                    # embedding.sprite.single_image_dim.extend([28, 28])
 
-        # Specify where you find the sprite (we will create this later)
-        # 指定sprite 图像。这个也是可选的，如果没有提供sprite 图像，那么可视化的结果
-        # 每一个点就是一个小困点，而不是具体的图片。
-        # embedding.sprite.image_path = SPRITE_FILE
-        # 在提供sprite图像时，通过single_image_dim可以指定单张图片的大小。
-        # 这将用于从sprite图像中截取正确的原始图片。
-        # embedding.sprite.single_image_dim.extend([28, 28])
+                    # Say that you want to visualise the embeddings
+                    # 将PROJECTOR所需要的内容写入日志文件。
+                    projector.visualize_embeddings(self.summaryWriter, config)
 
-        # Say that you want to visualise the embeddings
-        # 将PROJECTOR所需要的内容写入日志文件。
-        projector.visualize_embeddings(self.summary_writer, config)
-
-        # 生成会话，初始化新声明的变量并将需要的日志信息写入文件。
-        # sess = tf.InteractiveSession()
-        # sess.run(tf.global_variables_initializer())
-        # saver = tf.train.Saver()
-        # saver.save(sess, os.path.join(log_dir, "model"), step)
+                    # 生成会话，初始化新声明的变量并将需要的日志信息写入文件。
+                    sess = tf.InteractiveSession()
+                    sess.run(tf.global_variables_initializer())
+                    saver = tf.train.Saver()
+                    saver.save(sess, os.path.join("logs", "tboard"), step)
+                    logger.debug("保存embedding")
 
 
 class VisdomVisualizer(object):
