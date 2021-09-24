@@ -4,5 +4,5 @@ matplotlib
 sklearn
 graphviz
 torchsummary
-tensorboard
-tensorflow
+tensorboard==1.12
+tensorflow==1.12
