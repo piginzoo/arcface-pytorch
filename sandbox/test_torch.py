@@ -14,4 +14,19 @@ for i in range(10):
     print(filtered_data)
     print("-------------------")
 
+print("================================================")
+
+import numpy as np
+label = np.random.randint(0, 9, (32,))
+data = np.random.rand(32, 2)
+print(data)
+print(label)
+for i in range(10):
+    mask = (label == i)
+    print(i, "=>", label[mask])
+    filtered_data = data[mask]
+    print(filtered_data)
+    print("-------------------")
+
+
 # python test_torch.py

@@ -37,7 +37,7 @@ class MnistTester(Tester):
     def __init__(self, opt, device):
         dataset = get_mnist_dataset(False, opt)
         self.data_loader = DataLoader(dataset,
-                                      batch_size=32, # 测试 = 3
+                                      batch_size=32,  # 测试 = 3
                                       shuffle=True,
                                       num_workers=0)
         self.test_size = 200  # 测试是 = 10
@@ -57,7 +57,6 @@ class MnistTester(Tester):
 
             # 预测
             output = model(x=imgs_of_batch)
-
 
             # 本来还想要再经过一下arcface的metrics，也就是论文的那个s*cos(θ+m)，
             # 但是，突然反思了一下，觉得不对，因为那个是需要同时传入label，我靠，我用网络就是为了argmax得到label，你让我传给你label，什么鬼？
@@ -87,14 +86,14 @@ class MnistTester(Tester):
             data, label = data.to(self.device), label.to(self.device)
             output = model(x=data)
             if features is None:
-                features = output
+                features = output.cpu().data.numpy()
             else:
-                features = torch.cat((features,output),0)
+                features = np.concatenate((features, output.cpu().data.numpy()))
             if labels is None:
-                labels = label
+                labels = label.cpu().data.numpy()
             else:
-                labels = torch.cat((labels,label),0)
-        return features,labels
+                labels = np.concatenate((labels, label.cpu().data.numpy()))
+        return features, labels
 
 
 class FaceTester(Tester):

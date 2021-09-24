@@ -71,7 +71,7 @@ class TensorboardVisualizer(object):
     # 参考 https://github.com/amirhfarzaneh/lsoftmax-pytorch/blob/master/train_mnist.py
     def plot_2d_embedding(self, name, features, labels, step):
         """
-        feature : shape [N, 2],是一个被降维为2的一个图，N是多少个分类，默认是10个，10个人的脸s
+        feature : numpy array, shape [N, 2],是一个被降维为2的一个图，N是多少个分类，默认是10个，10个人的脸s
         """
         figure = plt.figure(figsize=(5, 5))  # figsize用来设置图形的大小，a为图形的宽， b为图形的高，单位为"英寸"
 
@@ -80,9 +80,15 @@ class TensorboardVisualizer(object):
 
         # 按照不同的类别，过滤他们，然后画出他们
         for label in range(10):
-            indices = (label == labels).nonzero(as_tuple=True)
-            label_features = torch.index_select(features, 0, indices[0])
-            label_features = label_features.detach().numpy()  # 必须要这么干，按照异常提示里做的
+            # 使用pytorch的tensor来过滤
+            # indices = (label == labels).nonzero(as_tuple=True)
+            # label_features = torch.index_select(features, 0, indices[0])
+            # label_features = label_features.detach().numpy()  # 必须要这么干，按照异常提示里做的
+
+            # 使用numpy的array来过滤
+            mask = (label == labels)
+            label_features = features[mask]
+
             plt.scatter(label_features[:, 0], label_features[:, 1])
 
         # plt.show()
