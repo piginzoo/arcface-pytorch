@@ -50,7 +50,11 @@ class MnistTester(Tester):
             if index > self.test_size:
                 logger.debug("测试数据集长度超限：%d，退出", index)
                 break
+
+            # 预测
             output = model(x=imgs_of_batch)
+            output = output.data.cpu().numpy() # 转回cpu，否则报...found at least two devices, cuda:0 and cpu!
+
             # 本来还想要再经过一下arcface的metrics，也就是论文的那个s*cos(θ+m)，
             # 但是，突然反思了一下，觉得不对，因为那个是需要同时传入label，我靠，我用网络就是为了argmax得到label，你让我传给你label，什么鬼？
             # 显然我是理解错了，对比看了真实人脸的acc代码，在下面FaceTest.acc的实现里，test_performance方法里，
@@ -62,6 +66,7 @@ class MnistTester(Tester):
             # output = metric(output, target).item() <--- 反思：这步不需要了，因为，这个是为了算那个cos向量（参加arcface模型的注释）
             # 我只要看从resnet出来的向量就可以，argmax的那个就是最像的类别（不用softmax了，softmax只是为了放大而已）
             pred = output.max(1, keepdim=True)[1]
+
             correct += pred.eq(label.view_as(pred)).sum().item()
 
         acc = correct / (index * self.data_loader.batch_size)
