@@ -4,12 +4,22 @@ import os
 import numpy as np
 from PIL import Image
 from torch.utils import data
-from torchvision import transforms as T  # PyTorch框架中有一个非常重要且好用的包
+from torchvision import transforms as T, datasets  # PyTorch框架中有一个非常重要且好用的包
+from torchvision.transforms import transforms
 
 logger = logging.getLogger(__name__)
 
 
-
+def get_mnist_dataset(train,opt):
+    dataset = datasets.MNIST('./data',
+                             train=train,
+                             download=True,
+                             transform=transforms.Compose([
+                                 transforms.Resize(opt.input_shape[1:]),
+                                 transforms.ToTensor(),
+                                 transforms.Lambda(lambda x: x.repeat(3, 1, 1)),  # gray->rgb
+                                 transforms.Normalize((0.1307,), (0.3081,))]))
+    return dataset
 
 class Dataset(data.Dataset):
     """

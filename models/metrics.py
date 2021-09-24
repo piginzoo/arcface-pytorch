@@ -51,7 +51,7 @@ class ArcMarginProduct(nn.Module):
         这个module得到了啥？得到了一个可以做softmax的时候，归一化的余弦最大化的向量
         """
 
-        logger.debug("[网络输出]arcface的loss的输入x：%r", input.shape)
+        logger.debug("[网络输出]arcface的loss的输入x：%r, label: %r", input.shape,label)
         # --------------------------- cos(θ) & phi(θ) ---------------------------
         """
         >>> F.normalize(torch.Tensor([[1,1],
@@ -93,7 +93,7 @@ class ArcMarginProduct(nn.Module):
         logger.debug("[网络输出]one_hot：%r", one_hot.shape)
 
         # input.scatter_(dim, index, src)：从【src源数据】中获取的数据，按照【dim指定的维度】和【index指定的位置】，替换input中的数据。
-        one_hot.scatter_(dim=1, index=label.view(-1, 1).long(), src=1)
+        one_hot.scatter_(1, label.view(-1, 1).long(), 1)
 
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
         # 这步是在干嘛？是在算arcloss损失函数（论文2.1节的L3）的分母，

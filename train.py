@@ -9,7 +9,7 @@ from torch.nn import DataParallel
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 from torchsummary import summary
-from torchvision import datasets, transforms
+from utils.dataset import get_mnist_dataset
 
 from config.config import Config
 from models import get_resnet
@@ -35,19 +35,18 @@ def save_model(opt, epoch, model, train_size, loss, acc):
 
 def main(args):
     opt = Config()
+    train_size = None
 
     # 准备数据，如果mode是"visualize"，使用MNIST数据集
     # 可视化，其实就是使用MNIST数据集，训练一个2维向量
     # mnist数据，用于可视化的测试
     if args.mode == "visualize":
         logger.info("训练MNIST数据 >>>>> ")
-        dataset = datasets.MNIST('./data',
-                                 train=True,
-                                 download=True,
-                                 transform=transforms.Compose([
-                                     transforms.ToTensor(),
-                                     transforms.Normalize((0.1307,), (0.3081,))]))
-        tester = MnistTester()
+        dataset = get_mnist_dataset(True,opt)
+        tester = MnistTester(opt)
+
+        opt.max_epoch = 3
+        train_size = 3
     else:
         # 正常的人脸数据
         dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
@@ -57,7 +56,6 @@ def main(args):
                              shuffle=True,
                              num_workers=opt.num_workers)
     logger.info('每个Epoch有%d个批次，每个批次%d张', len(trainloader), opt.train_batch_size)
-    train_size = None
 
     # 准备调试参数
     if args.mode == "debug":
@@ -123,7 +121,7 @@ def main(args):
                 logger.debug("【训练】训练数据：%r", images.shape)
                 logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
                 feature = model(images)
-                logger.debug("【训练】训练输出：%r", feature)
+                # logger.debug("【训练】训练输出：%r", feature)
                 output = metric_fc(feature, label)  #
                 loss = criterion(output, label)
 
@@ -133,7 +131,7 @@ def main(args):
                 optimizer.zero_grad()
 
                 loss.backward()
-                torch.nn.utils.clip_grad_norm(model.parameters, 1, norm_type=2)
+                # torch.nn.utils.clip_grad_norm(model.parameters, 1, norm_type=2)
                 optimizer.step()
                 latest_loss = loss.item()
 
@@ -186,9 +184,9 @@ def main(args):
             visualizer.text(total_steps, acc, name='test_acc')
 
             if args.mode == "visualize":
-                features = tester.calculate_features(model, opt)
+                features,labels = tester.calculate_features(model, opt)
                 logger.debug("计算完的 [%d] 个人脸features", len(features))
-                visualizer.plot_2d_embedding(name='classes', features=features, step=total_steps)
+                visualizer.plot_2d_embedding(name='classes', features=features, labels=labels, step=total_steps)
 
     logger.info("训练结束，耗时%.2f小时，共%d个epochs，%d步",
                 (time.time() - start) / 3600,

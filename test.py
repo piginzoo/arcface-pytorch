@@ -14,37 +14,43 @@ import time
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from torchvision import datasets
-from torchvision.transforms import transforms
 
 import utils
+from utils.dataset import get_mnist_dataset
 
 logger = logging.getLogger(__name__)
 
 
 class Tester():
-    def acc(self,model,metric,opt):
+    """
+    为了适配2种测试：一种是人脸的，一种是实验用的MNIST（为了可视化）
+    """
+
+    def acc(self, model, metric, opt):
         pass
 
-    def calculate_features(self,model,metric,opt):
+    def calculate_features(self, model, opt):
         pass
 
 
 class MnistTester(Tester):
-    def __init__(self):
-        dataset = datasets.MNIST('./data',train=False,download=True,transform=transforms.Compose([
-                                     transforms.ToTensor(),
-                                     transforms.Normalize((0.1307,), (0.3081,))]))
-        self.data_loader = DataLoader(dataset,batch_size=64,shuffle=True,num_workers=1)
-        self.test_size = 500
+    def __init__(self, opt):
+        dataset = get_mnist_dataset(False, opt)
+        self.data_loader = DataLoader(dataset,
+                                      batch_size=32, # 测试 = 3
+                                      shuffle=True,
+                                      num_workers=0)
+        self.test_size = 500  # 测试是 = 10
 
-
-    def acc(self,model, metric, opt):
-        test_loader = list(self.data_loader)[:self.test_size]
+    def acc(self, model, metric, opt):
         correct = 0
         start = time.time()
-        for data, target in test_loader:
-            output = model(x=data)
+        for index, data in enumerate(self.data_loader):
+            imgs_of_batch, label = data
+            if index > self.test_size:
+                logger.debug("测试数据集长度超限：%d，退出", index)
+                break
+            output = model(x=imgs_of_batch)
             # 本来还想要再经过一下arcface的metrics，也就是论文的那个s*cos(θ+m)，
             # 但是，突然反思了一下，觉得不对，因为那个是需要同时传入label，我靠，我用网络就是为了argmax得到label，你让我传给你label，什么鬼？
             # 显然我是理解错了，对比看了真实人脸的acc代码，在下面FaceTest.acc的实现里，test_performance方法里，
@@ -56,17 +62,29 @@ class MnistTester(Tester):
             # output = metric(output, target).item() <--- 反思：这步不需要了，因为，这个是为了算那个cos向量（参加arcface模型的注释）
             # 我只要看从resnet出来的向量就可以，argmax的那个就是最像的类别（不用softmax了，softmax只是为了放大而已）
             pred = output.max(1, keepdim=True)[1]
-            correct += pred.eq(target.view_as(pred)).sum().item()
-        acc = correct / len(test_loader)
-        logger.debug("测试了%d条，正确%d条，正确率：%.4f，耗时：%.2f",len(test_loader),correct,acc,time.time()-start)
+            correct += pred.eq(label.view_as(pred)).sum().item()
+
+        acc = correct / (index * self.data_loader.batch_size)
+        logger.debug("测试了%d条，正确%d条，正确率：%.4f，耗时：%.2f",
+                     index * self.data_loader.batch_size,
+                     correct, acc, time.time() - start)
         return acc
 
-    def calculate_features(self,model,metric,image_paths):
+    def calculate_features(self, model, image_paths):
         test_loader = list(self.data_loader)[:self.test_size]
-        features = []
-        for data, target in test_loader:
+        features = None
+        labels = None
+        for data, label in test_loader:
             output = model(x=data)
-            output = metric(output, target).item()
+            if features is None:
+                features = output
+            else:
+                features = torch.cat((features,output),0)
+            if labels is None:
+                labels = label
+            else:
+                labels = torch.cat((labels,label),0)
+        return features,labels
 
 
 class FaceTester(Tester):

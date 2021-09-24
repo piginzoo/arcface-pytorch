@@ -1,17 +1,28 @@
 import io
 import logging
 import os
+import warnings
 from datetime import datetime
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import torch
 import visdom
-from PIL.Image import Image
+from PIL import Image
 from tensorboard.plugins import projector
 from torch.utils.tensorboard import SummaryWriter
 
 import utils
+
+logging.getLogger('matplotlib.font_manager').disabled = True
+logging.getLogger('matplotlib').disabled = True
+warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore", module="matplotlib")
+matplotlib.rcParams['font.sans-serif'] = ['Arial Unicode MS']  # 指定默认字体
+matplotlib.rcParams['axes.unicode_minus'] = False  # 正常显示负号
+matplotlib.rcParams['axes.unicode_minus'] = False  # 解决负号'-'显示为方块的问题
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +60,7 @@ class TensorboardVisualizer(object):
         if not os.path.exists(__log_dir):
             os.makedirs(__log_dir)
         self.summaryWriter = SummaryWriter(log_dir=__log_dir)
+        self.log_dir = __log_dir
 
     def text(self, step, value, name):
         self.summaryWriter.add_scalar(tag=name, scalar_value=value, global_step=step)
@@ -57,21 +69,36 @@ class TensorboardVisualizer(object):
         tf.summary.image(name, images)  # step=0, 只保留当前批次就可以
 
     # 参考 https://github.com/amirhfarzaneh/lsoftmax-pytorch/blob/master/train_mnist.py
-    def plot_2d_embedding(self, name, features, step):
+    def plot_2d_embedding(self, name, features, labels, step):
         """
         feature : shape [N, 2],是一个被降维为2的一个图，N是多少个分类，默认是10个，10个人的脸s
         """
-        figure = plt.figure(figsize=(100, 100))
-        for one_person_faces in (features):
-            for one_face in one_person_faces:
-                plt.scatter(one_face[0], one_face[1])
-        plt.show()
+        figure = plt.figure(figsize=(5, 5))  # figsize用来设置图形的大小，a为图形的宽， b为图形的高，单位为"英寸"
+
+        logger.debug("Matplot显示数据：%d行",len(features))
+        logger.debug("Matplot显示标签：%d个", len(labels))
+
+        # 按照不同的类别，过滤他们，然后画出他们
+        for label in range(10):
+            indices = (label == labels).nonzero(as_tuple=True)
+            label_features = torch.index_select(features, 0, indices[0])
+            label_features = label_features.detach().numpy()  # 必须要这么干，按照异常提示里做的
+            plt.scatter(label_features[:, 0], label_features[:, 1])
+
+        # plt.show()
         buf = io.BytesIO()
         plt.savefig(buf, format='png')
         plt.close(figure)
         buf.seek(0)
         image = np.array(Image.open(buf))
-        tf.summary.image(name, image, step)
+        image_string = buf.getvalue()
+        height, width, channel = image.shape
+        logger.debug("保存matplot结果到tensorboad:%r", image.shape)
+        image = tf.Summary.Image(height=height, width=width, colorspace=channel, encoded_image_string=image_string)
+        summary = tf.Summary(value=[tf.Summary.Value(tag=name, image=image)])
+        writer = tf.summary.FileWriter(self.log_dir)
+        writer.add_summary(summary, step)
+        writer.close()
 
     # https://www.cnblogs.com/cloud-ken/p/9329703.html
     # 生成可视化最终输出层向量所需要的日志文件
@@ -86,44 +113,44 @@ class TensorboardVisualizer(object):
         """
         for person in features:
             for feature in person:
-                    # 使用一个新的变量来保存最终输出层向量的结果，
-                    # 因为embedding是通过Tensorflow中变量完成的，
-                    # 所以PROJECTOR可视化的都是TensorFlow中的变量，
-                    # 所以这里需要新定义一个变量来保存输出层向量的取值
-                    y = tf.Variable(feature, name="face")
+                # 使用一个新的变量来保存最终输出层向量的结果，
+                # 因为embedding是通过Tensorflow中变量完成的，
+                # 所以PROJECTOR可视化的都是TensorFlow中的变量，
+                # 所以这里需要新定义一个变量来保存输出层向量的取值
+                y = tf.Variable(feature, name="face")
 
-                    # 通过project.ProjectorConfig类来帮助生成日志文件
-                    config = projector.ProjectorConfig()
-                    # 增加一个需要可视化的bedding结果
-                    embedding = config.embeddings.add()
-                    # 指定这个embedding结果所对应的Tensorflow变量名称
-                    embedding.tensor_name = y.name
+                # 通过project.ProjectorConfig类来帮助生成日志文件
+                config = projector.ProjectorConfig()
+                # 增加一个需要可视化的bedding结果
+                embedding = config.embeddings.add()
+                # 指定这个embedding结果所对应的Tensorflow变量名称
+                embedding.tensor_name = y.name
 
-                    # Specify where you find the metadata
-                    # 指定embedding结果所对应的原始数据信息。
-                    # 比如这里指定的就是每一张MNIST测试图片对应的真实类别。
-                    # 在单词向量中可以是单词ID对应的单词。
-                    # 这个文件是可选的，如果没有指定那么向量就没有标签。
-                    # embedding.metadata_path = META_FIEL
+                # Specify where you find the metadata
+                # 指定embedding结果所对应的原始数据信息。
+                # 比如这里指定的就是每一张MNIST测试图片对应的真实类别。
+                # 在单词向量中可以是单词ID对应的单词。
+                # 这个文件是可选的，如果没有指定那么向量就没有标签。
+                # embedding.metadata_path = META_FIEL
 
-                    # Specify where you find the sprite (we will create this later)
-                    # 指定sprite 图像。这个也是可选的，如果没有提供sprite 图像，那么可视化的结果
-                    # 每一个点就是一个小困点，而不是具体的图片。
-                    # embedding.sprite.image_path = SPRITE_FILE
-                    # 在提供sprite图像时，通过single_image_dim可以指定单张图片的大小。
-                    # 这将用于从sprite图像中截取正确的原始图片。
-                    # embedding.sprite.single_image_dim.extend([28, 28])
+                # Specify where you find the sprite (we will create this later)
+                # 指定sprite 图像。这个也是可选的，如果没有提供sprite 图像，那么可视化的结果
+                # 每一个点就是一个小困点，而不是具体的图片。
+                # embedding.sprite.image_path = SPRITE_FILE
+                # 在提供sprite图像时，通过single_image_dim可以指定单张图片的大小。
+                # 这将用于从sprite图像中截取正确的原始图片。
+                # embedding.sprite.single_image_dim.extend([28, 28])
 
-                    # Say that you want to visualise the embeddings
-                    # 将PROJECTOR所需要的内容写入日志文件。
-                    projector.visualize_embeddings(self.summaryWriter, config)
+                # Say that you want to visualise the embeddings
+                # 将PROJECTOR所需要的内容写入日志文件。
+                projector.visualize_embeddings(self.summaryWriter, config)
 
-                    # 生成会话，初始化新声明的变量并将需要的日志信息写入文件。
-                    sess = tf.InteractiveSession()
-                    sess.run(tf.global_variables_initializer())
-                    saver = tf.train.Saver()
-                    saver.save(sess, os.path.join("logs", "tboard"), step)
-                    logger.debug("保存embedding")
+                # 生成会话，初始化新声明的变量并将需要的日志信息写入文件。
+                sess = tf.InteractiveSession()
+                sess.run(tf.global_variables_initializer())
+                saver = tf.train.Saver()
+                saver.save(sess, os.path.join("logs", "tboard"), step)
+                logger.debug("保存embedding")
 
 
 class VisdomVisualizer(object):
