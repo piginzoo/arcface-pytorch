@@ -34,26 +34,30 @@ class Tester():
 
 
 class MnistTester(Tester):
-    def __init__(self, opt):
+    def __init__(self, opt, device):
         dataset = get_mnist_dataset(False, opt)
         self.data_loader = DataLoader(dataset,
                                       batch_size=32, # 测试 = 3
                                       shuffle=True,
                                       num_workers=0)
-        self.test_size = 500  # 测试是 = 10
+        self.test_size = 200  # 测试是 = 10
+        self.device = device
 
     def acc(self, model, metric, opt):
         correct = 0
         start = time.time()
         for index, data in enumerate(self.data_loader):
             imgs_of_batch, label = data
+            # bugfix:...found at least two devices, cuda:0 and cpu!
+            data, label = imgs_of_batch.to(self.device), label.to(self.device)
+
             if index > self.test_size:
                 logger.debug("测试数据集长度超限：%d，退出", index)
                 break
 
             # 预测
             output = model(x=imgs_of_batch)
-            output = output.data.cpu().numpy() # 转回cpu，否则报...found at least two devices, cuda:0 and cpu!
+
 
             # 本来还想要再经过一下arcface的metrics，也就是论文的那个s*cos(θ+m)，
             # 但是，突然反思了一下，觉得不对，因为那个是需要同时传入label，我靠，我用网络就是为了argmax得到label，你让我传给你label，什么鬼？
@@ -80,6 +84,7 @@ class MnistTester(Tester):
         features = None
         labels = None
         for data, label in test_loader:
+            data, label = data.to(self.device), label.to(self.device)
             output = model(x=data)
             if features is None:
                 features = output
