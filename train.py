@@ -36,6 +36,7 @@ def save_model(opt, epoch, model, train_size, loss, acc):
 def main(args):
     opt = Config()
     train_size = None
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
 
     # 准备数据，如果mode是"visualize"，使用MNIST数据集
     # 可视化，其实就是使用MNIST数据集，训练一个2维向量
@@ -43,7 +44,7 @@ def main(args):
     if args.mode == "visualize":
         logger.info("训练MNIST数据 >>>>> ")
         dataset = get_mnist_dataset(True,opt)
-        tester = MnistTester(opt)
+        tester = MnistTester(opt,device)
 
         # 测试
         # opt.max_epoch = 3
@@ -70,7 +71,6 @@ def main(args):
         train_size = 5
 
     # 准备神经网络
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
     logger.info("训练使用:%r", device)
     criterion = FocalLoss(gamma=2)
     model = get_resnet(opt, args.mode)
