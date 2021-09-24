@@ -59,14 +59,20 @@ class TensorboardVisualizer(object):
 
         if not os.path.exists(__log_dir):
             os.makedirs(__log_dir)
-        self.summaryWriter = SummaryWriter(log_dir=__log_dir)
+        self.summaryWriter = tf.summary.create_file_writer(logdir=__log_dir) # tf1.x:SummaryWriter(log_dir=__log_dir)
         self.log_dir = __log_dir
 
     def text(self, step, value, name):
-        self.summaryWriter.add_scalar(tag=name, scalar_value=value, global_step=step)
+        # for tensorflow1.x，代码保留
+        # self.summaryWriter.add_scalar(tag=name, scalar_value=value, global_step=step)
+        with self.summaryWriter.as_default():
+            tf.summary.scalar(name, value, step=step)
 
     def image(self, images, name):
-        tf.summary.image(name, images)  # step=0, 只保留当前批次就可以
+        with self.summaryWriter.as_default():
+            images = np.transpose(images,(0,2,3,1)) # [B,C,H,W]=>[B,H,W,C], tf2.x的image通道顺序
+            tf.summary.image(name, images,0)  # step=0, 只保留当前批次就可以
+
 
     # 参考 https://github.com/amirhfarzaneh/lsoftmax-pytorch/blob/master/train_mnist.py
     def plot_2d_embedding(self, name, features, labels, step):
@@ -100,11 +106,20 @@ class TensorboardVisualizer(object):
         image_string = buf.getvalue()
         height, width, channel = image.shape
         logger.debug("保存matplot结果到tensorboad:%r", image.shape)
-        image = tf.Summary.Image(height=height, width=width, colorspace=channel, encoded_image_string=image_string)
-        summary = tf.Summary(value=[tf.Summary.Value(tag=name, image=image)])
-        writer = tf.summary.FileWriter(self.log_dir)
-        writer.add_summary(summary, step)
-        writer.close()
+
+        # for tensorflow1.x，代码保留
+        # image = tf.Summary.Image(height=height, width=width, colorspace=channel, encoded_image_string=image_string)
+        # summary = tf.Summary(value=[tf.Summary.Value(tag=name, image=image)])
+        # writer = tf.summary.FileWriter(self.log_dir)
+        # writer.add_summary(summary, step)
+        # writer.close()
+
+        # for tensorflow2.x
+        with self.summaryWriter.as_default():
+            image = tf.image.decode_png(buf.getvalue(), channels=4)
+            image = tf.expand_dims(image, 0)
+            tf.summary.image(name, image, max_outputs=9, step=step)
+
 
     # https://www.cnblogs.com/cloud-ken/p/9329703.html
     # 生成可视化最终输出层向量所需要的日志文件

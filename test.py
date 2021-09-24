@@ -37,10 +37,10 @@ class MnistTester(Tester):
     def __init__(self, opt, device):
         dataset = get_mnist_dataset(False, opt)
         self.data_loader = DataLoader(dataset,
-                                      batch_size=32,  # 测试 = 3
+                                      batch_size=32,  # 测试 = 3 | 32
                                       shuffle=True,
                                       num_workers=0)
-        self.test_size = 200  # 测试是 = 10
+        self.test_size = 200  # 测试是 = 10 | 200
         self.device = device
 
     def acc(self, model, metric, opt):

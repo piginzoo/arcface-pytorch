@@ -48,7 +48,7 @@ def main(args):
 
         # 测试
         # opt.max_epoch = 3
-        train_size = 20
+        # train_size = 3
     else:
         # 正常的人脸数据
         dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
