@@ -84,18 +84,20 @@ class MnistTester(Tester):
         features = None
         labels = None
         for data, label in test_loader:
-            data, label = data.to(self.device), label.to(self.device)
+            data = data.to(self.device)  # 放到显存中，用于加速
             # you don't need to calculate gradients for forward and backward phase.
             with torch.no_grad():
                 output = model(x=data)
+                output = output.cpu()  # 用cpu()值替换掉原引用，导致旧引用回收=>GPU内存回收，解决OOM问题
+
             if features is None:
-                features = output.detach().numpy()
+                features = output.numpy()
             else:
-                features = np.concatenate((features, output.detach().data.numpy()))
+                features = np.concatenate((features, output.numpy()))
             if labels is None:
-                labels = label.to('cpu').data.numpy()
+                labels = label.numpy()
             else:
-                labels = np.concatenate((labels, label.detach().data.numpy()))
+                labels = np.concatenate((labels, label.numpy()))
         return features, labels
 
 
@@ -117,10 +119,11 @@ class FaceTester(Tester):
             # logger.debug("推断要求输入：%r", list(model.parameters())[0].shape)
             logger.debug("推断实际输入：%r", data.shape)
             feature = model(data)[0]
+            feature = feature.cpu().numpy()
+
             logger.debug("推断实际输出：%r", feature.shape)
             logger.debug("推断实际输出：%r", feature)
 
-            feature = feature.data.detach().numpy()
             image_feature_dict[name] = feature
         return image_feature_dict
 
