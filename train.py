@@ -123,8 +123,9 @@ def main(args):
                 logger.debug("【训练】训练数据：%r", images.shape)
                 logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
                 feature = model(images)
-                # logger.debug("【训练】训练输出：%r", feature)
+                logger.debug("【训练】训练输出features：%r", feature)
                 output = metric_fc(feature, label)  #
+                logger.debug("【训练】训练输出output：%r", feature)
                 loss = criterion(output, label)
 
                 # 以SGD为例，是算一个batch计算一次梯度，然后进行一次梯度更新。这里梯度值就是对应偏导数的计算结果。
@@ -133,9 +134,12 @@ def main(args):
                 optimizer.zero_grad()
 
                 loss.backward()
+
                 # 做梯度裁剪
                 torch.nn.utils.clip_grad_norm(model.parameters(), max_norm=1)
+
                 optimizer.step()
+
                 latest_loss = loss.item()
 
                 # 每隔N个batch，就算一下这个批次的正确率
