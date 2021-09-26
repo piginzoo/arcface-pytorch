@@ -66,7 +66,7 @@ def main(args):
         opt.max_epoch = 3
         opt.test_batch_size = 1
         opt.test_size = 3
-        opt.print_freq = 1
+        opt.print_batch = 1
         opt.test_pair_size = 6
         train_size = 5
 
@@ -114,6 +114,7 @@ def main(args):
             if train_size and step_of_epoch > train_size:
                 logger.info("当前epoch内step[%d] > 训练最大数量[%d]，此epoch提前结束", step_of_epoch, train_size)
                 break
+            total_steps = total_steps + step_of_epoch
 
             try:
                 images, label = data
@@ -137,7 +138,7 @@ def main(args):
                 latest_loss = loss.item()
 
                 # 每隔N个batch，就算一下这个批次的正确率
-                if total_steps % opt.print_freq == 0:
+                if total_steps % opt.print_batch == 0:
                     output = output.cpu().numpy() # 一定要替掉output，这样之前的device=cuda的'output'就没引用，GPU内存释放
                     output = np.argmax(output, axis=1)
                     label = label.cpu().numpy()
@@ -150,15 +151,12 @@ def main(args):
                                 speed,
                                 loss.item(),
                                 train_batch_acc)
-                    if visualizer:
-                        logger.info("保存可视化信息：第 %d 步", total_steps)
-                        visualizer.text(total_steps, loss.item(), name='train_loss')
-                        visualizer.text(total_steps, train_batch_acc, name='train_acc')
-                        visualizer.image(images, name="train_images")
+                    logger.info("保存可视化信息：第 %d 步", total_steps)
+                    visualizer.text(total_steps, loss.item(), name='train_loss')
+                    visualizer.text(total_steps, train_batch_acc, name='train_acc')
+                    visualizer.image(images, name="train_images")
             except:
                 logger.exception("训练出现异常，继续...")
-
-            total_steps = epoch * len(trainloader) + step_of_epoch
 
         # 尝试预测
         acc = -1
@@ -177,17 +175,18 @@ def main(args):
             save_model(opt, epoch, model, len(trainloader), latest_loss, acc)
 
         # early_stopper可以帮助存基于acc的best模型
-        early_stopper.decide(acc, save_model, opt, epoch + 1, model, len(trainloader), latest_loss, acc)
+        if not early_stopper.decide(acc, save_model, opt, epoch + 1, model, len(trainloader), latest_loss, acc):
+            logger.info("早停导致退出：epoch[%d] acc[%.4f]",epoch+1, acc)
+            break
 
-        if visualizer:
-            logger.info("Epoch [%d] 结束可视化(保存softmax可视化)", epoch)
-            total_steps = (epoch + 1) * len(trainloader)
-            visualizer.text(total_steps, acc, name='test_acc')
+        logger.info("Epoch [%d] 结束可视化(保存softmax可视化)", epoch)
+        total_steps = (epoch + 1) * len(trainloader)
+        visualizer.text(total_steps, acc, name='test_acc')
 
-            if args.mode == "visualize":
-                features,labels = tester.calculate_features(model, opt)
-                logger.debug("计算完的 [%d] 个人脸features", len(features))
-                visualizer.plot_2d_embedding(name='classes', features=features, labels=labels, step=total_steps)
+        if args.mode == "visualize":
+            features,labels = tester.calculate_features(model, opt)
+            logger.debug("计算完的 [%d] 个人脸features", len(features))
+            visualizer.plot_2d_embedding(name='classes', features=features, labels=labels, step=total_steps)
 
     logger.info("训练结束，耗时%.2f小时，共%d个epochs，%d步",
                 (time.time() - start) / 3600,

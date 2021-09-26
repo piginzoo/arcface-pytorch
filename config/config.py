@@ -31,7 +31,7 @@ class Config(object):
     test_pair_size = 300 # 测试300个正确对，150个同一人，150个不同人
     test_classes = 10 # 只测试10个人的脸，用来打印embeding的softmax情况
 
-    early_stop = 100
+    early_stop = 10 # 多少个epoch没提高，就退出
 
     # 对celeba数据集原图是178x218=>(170,170)，对lfw和webface原图是250x250=>(240,240)，
     # 原来程序给的128x128肯定是不合适的，会切丢的，他切是按照原尺寸和目标尺寸之间的间隙随机动，所以原图和目标size相差不能太大（参加RandomCrop源码）
@@ -40,7 +40,7 @@ class Config(object):
     use_gpu = False  # use GPU or not
     gpu_id = '0, 1'
     num_workers = 0  # how many workers for loading data
-    print_freq = 1000  # print info every N batch
+    print_batch = 1000  # print info every N batch
 
     debug_file = '/tmp/debug'  # if os.path.exists(debug_file): enter ipdb
     result_file = 'result.csv'
