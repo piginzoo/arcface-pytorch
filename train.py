@@ -88,10 +88,9 @@ def main(args):
     # 为何loss，也需要用这么操作一下？
     metric_fc.to(device)  # 用xxx设备
     metric_fc = DataParallel(metric_fc)  # 走并行模式
-    optimizer = torch.optim.Adam([{'params': model.parameters()},
-                                  {'params': metric_fc.parameters()}],
-                                 lr=opt.lr, weight_decay=opt.weight_decay)
-    scheduler = StepLR(optimizer, step_size=opt.lr_step, gamma=0.1)  # StepLR是调整学习率的
+    optimizer = torch.optim.Adam([{'params': model.parameters()},{'params': metric_fc.parameters()}],
+                                 lr=opt.lr,
+                                 weight_decay=opt.weight_decay)
     early_stopper = EarlyStop(opt.early_stop)
     summary(model, opt.input_shape)
 
@@ -104,7 +103,6 @@ def main(args):
 
     for epoch in range(opt.max_epoch):
 
-        scheduler.step()
         model.train()
 
         epoch_start = time.time()
@@ -133,7 +131,8 @@ def main(args):
                 optimizer.zero_grad()
 
                 loss.backward()
-                # torch.nn.utils.clip_grad_norm(model.parameters, 1, norm_type=2)
+                # 做梯度裁剪
+                torch.nn.utils.clip_grad_norm(model.parameters, max_norm=1)
                 optimizer.step()
                 latest_loss = loss.item()
 
