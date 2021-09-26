@@ -35,7 +35,7 @@ def get_resnet(config,mode):
     # 还是用经典的方式把，也是网上推荐的替换FC的。
     # 这里有个细节：resnet50是把原图缩小到32倍，但是最后却成了1x1，原因是用了全局平均池化的缘故，这块也不动了，
     # 所以无论你什么尺寸，最终都会被平均池化成1x1
-    if mode=="visualize":
+    if mode=="mnist":
         model.fc = nn.Sequential(
             nn.Linear(fc_features, 512),
             nn.BatchNorm1d(512),

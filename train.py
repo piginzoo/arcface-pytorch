@@ -38,10 +38,10 @@ def main(args):
     train_size = None
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
 
-    # 准备数据，如果mode是"visualize"，使用MNIST数据集
+    # 准备数据，如果mode是"mnist"，使用MNIST数据集
     # 可视化，其实就是使用MNIST数据集，训练一个2维向量
     # mnist数据，用于可视化的测试
-    if args.mode == "visualize":
+    if args.mode == "mnist":
         logger.info("训练MNIST数据 >>>>> ")
         dataset = get_mnist_dataset(True,opt)
         tester = MnistTester(opt,device)
@@ -77,7 +77,7 @@ def main(args):
 
     # 你注意这个细节，这个是一个网络中的"层";需要传入num_classes，也就是说，多少个人的人脸就是多少类，这里大概是1万左右（不同数据集不同）
     # 另外第一个入参是输入维度，是512，why？是因为resnet50网络的最后的输出就是512：self.fc5 = nn.Linear(512 * 8 * 8, 512)
-    if args.mode == "visualize":
+    if args.mode == "mnist":
         # 可视化要求最后输出的维度不是512，而是2，是512之后再接个2
         metric_fc = ArcMarginProduct(2, 10, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
     else:
@@ -137,21 +137,20 @@ def main(args):
                 latest_loss = loss.item()
 
                 # 每隔N个batch，就算一下这个批次的正确率
-                logger.debug("total_steps:%r,opt.print_batch=%r",total_steps,opt.print_batch)
                 if total_steps % opt.print_batch == 0:
-                    output = output.cpu().numpy() # 一定要替掉output，这样之前的device=cuda的'output'就没引用，GPU内存释放
+                    logger.debug("[可视化] 第%d批", total_steps)
+                    output = output.detach().numpy()
                     output = np.argmax(output, axis=1)
                     label = label.cpu().numpy()
                     train_batch_acc = np.mean((output == label).astype(int))
                     speed = total_steps / (time.time() - start)
-                    logger.info("Epoch[%s]/迭代[%d],耗时%.2f秒,速度[%.0f步/秒],loss[%.4f],batch_acc[%.4f]",
+                    logger.info("[可视化] Epoch[%s]/迭代[%d],耗时%.2f秒,速度[%.0f步/秒],loss[%.4f],batch_acc[%.4f]",
                                 epoch,
                                 total_steps,
                                 time.time() - epoch_start,
                                 speed,
                                 loss.item(),
                                 train_batch_acc)
-                    logger.info("保存可视化信息：第 %d 步", total_steps)
                     visualizer.text(total_steps, loss.item(), name='train_loss')
                     visualizer.text(total_steps, train_batch_acc, name='train_acc')
                     visualizer.image(images, name="train_images")
@@ -183,7 +182,7 @@ def main(args):
         total_steps = (epoch + 1) * len(trainloader)
         visualizer.text(total_steps, acc, name='test_acc')
 
-        if args.mode == "visualize":
+        if args.mode == "mnist":
             features,labels = tester.calculate_features(model, opt)
             logger.debug("计算完的 [%d] 个人脸features", len(features))
             visualizer.plot_2d_embedding(name='classes', features=features, labels=labels, step=total_steps)

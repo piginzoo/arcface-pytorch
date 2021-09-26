@@ -8,11 +8,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-import torch
 import visdom
 from PIL import Image
 from tensorboard.plugins import projector
-from torch.utils.tensorboard import SummaryWriter
 
 import utils
 
@@ -59,7 +57,7 @@ class TensorboardVisualizer(object):
 
         if not os.path.exists(__log_dir):
             os.makedirs(__log_dir)
-        self.summaryWriter = tf.summary.create_file_writer(logdir=__log_dir) # tf1.x:SummaryWriter(log_dir=__log_dir)
+        self.summaryWriter = tf.summary.create_file_writer(logdir=__log_dir)  # tf1.x:SummaryWriter(log_dir=__log_dir)
         self.log_dir = __log_dir
 
     def text(self, step, value, name):
@@ -70,9 +68,9 @@ class TensorboardVisualizer(object):
 
     def image(self, images, name):
         with self.summaryWriter.as_default():
-            images = np.transpose(images,(0,2,3,1)) # [B,C,H,W]=>[B,H,W,C], tf2.x的image通道顺序
-            tf.summary.image(name, images,0)  # step=0, 只保留当前批次就可以
-
+            images = np.transpose(images, (0, 2, 3, 1))  # [B,C,H,W]=>[B,H,W,C], tf2.x的image通道顺序
+            tf.summary.image(name, images, 0)  # step=0, 只保留当前批次就可以
+            logger.info("保存图保存到tensorboad: %r", images.shape)
 
     # 参考 https://github.com/amirhfarzaneh/lsoftmax-pytorch/blob/master/train_mnist.py
     def plot_2d_embedding(self, name, features, labels, step):
@@ -81,7 +79,7 @@ class TensorboardVisualizer(object):
         """
         figure = plt.figure(figsize=(5, 5))  # figsize用来设置图形的大小，a为图形的宽， b为图形的高，单位为"英寸"
 
-        logger.debug("Matplot显示数据：%d行",len(features))
+        logger.debug("Matplot显示数据：%d行", len(features))
         logger.debug("Matplot显示标签：%d个", len(labels))
 
         # 按照不同的类别，过滤他们，然后画出他们
@@ -105,7 +103,6 @@ class TensorboardVisualizer(object):
         image = np.array(Image.open(buf))
         image_string = buf.getvalue()
         height, width, channel = image.shape
-        logger.debug("保存matplot结果到tensorboad:%r", image.shape)
 
         # for tensorflow1.x，代码保留
         # image = tf.Summary.Image(height=height, width=width, colorspace=channel, encoded_image_string=image_string)
@@ -118,8 +115,8 @@ class TensorboardVisualizer(object):
         with self.summaryWriter.as_default():
             image = tf.image.decode_png(buf.getvalue(), channels=4)
             image = tf.expand_dims(image, 0)
-            tf.summary.image(name, image, max_outputs=9, step=step)
-
+            tf.summary.image(name, image, step=step)
+            logger.info("保存Embeding图保存到tensorboad: %r", image.shape)
 
     # https://www.cnblogs.com/cloud-ken/p/9329703.html
     # 生成可视化最终输出层向量所需要的日志文件
