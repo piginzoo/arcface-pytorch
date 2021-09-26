@@ -138,9 +138,9 @@ def main(args):
 
                 # 每隔N个batch，就算一下这个批次的正确率
                 if total_steps % opt.print_freq == 0:
-                    output = output.data.cpu().numpy()
+                    output = output.detach().numpy()
                     output = np.argmax(output, axis=1)
-                    label = label.data.cpu().numpy()
+                    label = label.detach().numpy()
                     train_batch_acc = np.mean((output == label).astype(int))
                     speed = total_steps / (time.time() - start)
                     logger.info("Epoch[%s]/迭代[%d],耗时%.2f秒,速度[%.0f步/秒],loss[%.4f],batch_acc[%.4f]",

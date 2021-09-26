@@ -56,7 +56,8 @@ class MnistTester(Tester):
                 break
 
             # 预测
-            output = model(x=imgs_of_batch)
+            with torch.no_grad():
+                output = model(x=imgs_of_batch)
 
             # 本来还想要再经过一下arcface的metrics，也就是论文的那个s*cos(θ+m)，
             # 但是，突然反思了一下，觉得不对，因为那个是需要同时传入label，我靠，我用网络就是为了argmax得到label，你让我传给你label，什么鬼？
@@ -84,15 +85,17 @@ class MnistTester(Tester):
         labels = None
         for data, label in test_loader:
             data, label = data.to(self.device), label.to(self.device)
-            output = model(x=data)
+            # you don't need to calculate gradients for forward and backward phase.
+            with torch.no_grad():
+                output = model(x=data)
             if features is None:
-                features = output.cpu().data.numpy()
+                features = output.detach().numpy()
             else:
-                features = np.concatenate((features, output.cpu().data.numpy()))
+                features = np.concatenate((features, output.detach().data.numpy()))
             if labels is None:
-                labels = label.cpu().data.numpy()
+                labels = label.to('cpu').data.numpy()
             else:
-                labels = np.concatenate((labels, label.cpu().data.numpy()))
+                labels = np.concatenate((labels, label.detach().data.numpy()))
         return features, labels
 
 
@@ -117,7 +120,7 @@ class FaceTester(Tester):
             logger.debug("推断实际输出：%r", feature.shape)
             logger.debug("推断实际输出：%r", feature)
 
-            feature = feature.data.cpu().numpy()
+            feature = feature.data.detach().numpy()
             image_feature_dict[name] = feature
         return image_feature_dict
 
