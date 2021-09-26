@@ -139,9 +139,11 @@ def main(args):
                 # 每隔N个batch，就算一下这个批次的正确率
                 if total_steps % opt.print_batch == 0:
                     logger.debug("[可视化] 第%d批", total_steps)
-                    output = output.detach().numpy()
+
+                    output = output.cpu().detach().numpy() #1.cpu:复制一份到GPU=>内存 2.detach,去掉梯度，12后才能numpy
+                    label = label.cpu().detach().numpy()
+
                     output = np.argmax(output, axis=1)
-                    label = label.cpu().numpy()
                     train_batch_acc = np.mean((output == label).astype(int))
                     speed = total_steps / (time.time() - start)
                     logger.info("[可视化] Epoch[%s]/迭代[%d],耗时%.2f秒,速度[%.0f步/秒],loss[%.4f],batch_acc[%.4f]",
