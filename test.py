@@ -52,7 +52,7 @@ class MnistTester(Tester):
             data, label = imgs_of_batch.to(self.device), label.to(self.device)
 
             if index > self.test_size:
-                logger.debug("测试数据集长度超限：%d，退出", index)
+                logger.debug("[验证] 测试数据集长度超限：%d，模型计算验证数据结束", index)
                 break
 
             # 预测

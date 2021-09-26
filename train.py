@@ -112,7 +112,7 @@ def main(args):
             if train_size and step_of_epoch > train_size:
                 logger.info("当前epoch内step[%d] > 训练最大数量[%d]，此epoch提前结束", step_of_epoch, train_size)
                 break
-            total_steps = total_steps + step_of_epoch
+            total_steps = total_steps + 1
 
             try:
                 images, label = data
@@ -137,6 +137,7 @@ def main(args):
                 latest_loss = loss.item()
 
                 # 每隔N个batch，就算一下这个批次的正确率
+                logger.debug("total_steps:%r,opt.print_batch=%r",total_steps,opt.print_batch)
                 if total_steps % opt.print_batch == 0:
                     output = output.cpu().numpy() # 一定要替掉output，这样之前的device=cuda的'output'就没引用，GPU内存释放
                     output = np.argmax(output, axis=1)
@@ -174,7 +175,7 @@ def main(args):
             save_model(opt, epoch, model, len(trainloader), latest_loss, acc)
 
         # early_stopper可以帮助存基于acc的best模型
-        if not early_stopper.decide(acc, save_model, opt, epoch + 1, model, len(trainloader), latest_loss, acc):
+        if early_stopper.decide(acc, save_model, opt, epoch + 1, model, len(trainloader), latest_loss, acc):
             logger.info("早停导致退出：epoch[%d] acc[%.4f]",epoch+1, acc)
             break
 

@@ -46,7 +46,7 @@ class EarlyStop():
             return False
 
         if decision == EarlyStop.STOP:
-            logger.warning("超过早停最大次数，也尝试了多次学习率Decay，无法在提高：第%d次，训练提前结束", step)
+            logger.warning("超过早停最大次数，也尝试了多次学习率Decay，无法在提高，训练提前结束")
             return True
 
         logger.error("无法识别的EarlyStop结果：%r", decision)
