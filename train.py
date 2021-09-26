@@ -132,7 +132,7 @@ def main(args):
 
                 loss.backward()
                 # 做梯度裁剪
-                torch.nn.utils.clip_grad_norm(model.parameters, max_norm=1)
+                torch.nn.utils.clip_grad_norm(model.parameters(), max_norm=1)
                 optimizer.step()
                 latest_loss = loss.item()
 
