@@ -116,8 +116,10 @@ def main(args):
 
             try:
                 images, label = data
+
                 images = images.to(device)
                 label = label.to(device).long()
+
                 logger.debug("【训练】训练数据：%r", images.shape)
                 logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
                 feature = model(images)
@@ -140,8 +142,10 @@ def main(args):
                 if total_steps % opt.print_batch == 0:
                     logger.debug("[可视化] 第%d批", total_steps)
 
+                    # 从tensor=>numpy(device从cuda=>cpu)
                     output = output.cpu().detach().numpy() #1.cpu:复制一份到GPU=>内存 2.detach,去掉梯度，12后才能numpy
                     label = label.cpu().detach().numpy()
+                    images = images.cpu().detach().numpy()
 
                     output = np.argmax(output, axis=1)
                     train_batch_acc = np.mean((output == label).astype(int))
