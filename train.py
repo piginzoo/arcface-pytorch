@@ -6,10 +6,8 @@ import time
 import numpy as np
 import torch
 from torch.nn import DataParallel
-from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 from torchsummary import summary
-from utils.dataset import get_mnist_dataset
 
 from config.config import Config
 from models import get_resnet
@@ -18,6 +16,7 @@ from models.metrics import ArcMarginProduct
 from test import MnistTester, FaceTester
 from utils import init_log
 from utils.dataset import Dataset
+from utils.dataset import get_mnist_dataset
 from utils.early_stop import EarlyStop
 from utils.visualizer import TensorboardVisualizer
 
@@ -43,8 +42,8 @@ def main(args):
     # mnist数据，用于可视化的测试
     if args.mode == "mnist":
         logger.info("训练MNIST数据 >>>>> ")
-        dataset = get_mnist_dataset(True,opt)
-        tester = MnistTester(opt,device)
+        dataset = get_mnist_dataset(True, opt)
+        tester = MnistTester(opt, device)
 
         # 测试
         # opt.max_epoch = 3
@@ -88,10 +87,12 @@ def main(args):
     # 为何loss，也需要用这么操作一下？
     metric_fc.to(device)  # 用xxx设备
     metric_fc = DataParallel(metric_fc)  # 走并行模式
-    optimizer = torch.optim.Adam([{'params': model.parameters()},{'params': metric_fc.parameters()}],
+    optimizer = torch.optim.Adam([{'params': model.parameters()}, {'params': metric_fc.parameters()}],
                                  lr=opt.lr,
                                  weight_decay=opt.weight_decay)
     early_stopper = EarlyStop(opt.early_stop)
+
+    # 为了打印网络结构，需要传入一个input的shape
     summary(model, opt.input_shape)
 
     # 其他准备
@@ -147,7 +148,7 @@ def main(args):
                     logger.debug("[可视化] 第%d批", total_steps)
 
                     # 从tensor=>numpy(device从cuda=>cpu)
-                    output = output.cpu().detach().numpy() #1.cpu:复制一份到GPU=>内存 2.detach,去掉梯度，12后才能numpy
+                    output = output.cpu().detach().numpy()  # 1.cpu:复制一份到GPU=>内存 2.detach,去掉梯度，12后才能numpy
                     label = label.cpu().detach().numpy()
                     images = images.cpu().detach().numpy()
 
@@ -185,7 +186,7 @@ def main(args):
 
         # early_stopper可以帮助存基于acc的best模型
         if early_stopper.decide(acc, save_model, opt, epoch + 1, model, len(trainloader), latest_loss, acc):
-            logger.info("早停导致退出：epoch[%d] acc[%.4f]",epoch+1, acc)
+            logger.info("早停导致退出：epoch[%d] acc[%.4f]", epoch + 1, acc)
             break
 
         logger.info("Epoch [%d] 结束可视化(保存softmax可视化)", epoch)
@@ -193,7 +194,7 @@ def main(args):
         visualizer.text(total_steps, acc, name='test_acc')
 
         if args.mode == "mnist":
-            features,labels = tester.calculate_features(model, opt)
+            features, labels = tester.calculate_features(model, opt)
             logger.debug("计算完的 [%d] 个人脸features", len(features))
             visualizer.plot_2d_embedding(name='classes', features=features, labels=labels, step=total_steps)
 
