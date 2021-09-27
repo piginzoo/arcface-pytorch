@@ -22,7 +22,7 @@ class Config(object):
 
     checkpoints_path = 'checkpoints/arcface_e{}_s{}_{}_l{:.2f}_a{:.2f}.model'  # epoch,step,datetime,loss,acc
 
-    train_batch_size = 16  # batch size
+    train_batch_size = 32  # batch size
 
     lfw_root = 'data/val/images'
     lfw_test_pair_path = 'data/val/lfw_test_pair.txt'
