@@ -118,20 +118,20 @@ def main(args):
 
             try:
                 images, label = data
+                if np.isnan(images.numpy()).any():
+                    logger.error("图片数据出现异常：epoch:%d/step:%d", epoch, step_of_epoch)
+                    continue
+                # logger.debug("图像数据：%r",images)
 
                 images = images.to(device)
                 label = label.to(device).long()
 
-                if np.isnan(images).any():
-                    logger.error("图片数据出现异常：epoch:%d/step:%d", epoch, step_of_epoch)
-                    continue
-                logger.debug("图像数据：%r",images)
 
                 logger.debug("【训练】训练数据：%r", images.shape)
                 logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
                 feature = model(images)
                 logger.debug("【训练】训练输出features：%r", feature)
-                output = metric_fc(feature, label)  #
+                output = metric_fc(feature)# , label)  #
                 logger.debug("【训练】训练输出output：%r", feature)
                 loss = criterion(output, label)
 
