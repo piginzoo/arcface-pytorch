@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import logging
+import math
 import time
 
 import numpy as np
@@ -11,7 +12,6 @@ from torchsummary import summary
 
 from config.config import Config
 from models import get_resnet
-from models.focal_loss import FocalLoss
 from models.metrics import ArcMarginProduct
 from test import MnistTester, FaceTester
 from utils import init_log
@@ -71,7 +71,7 @@ def main(args):
 
     # 准备神经网络
     logger.info("训练使用:%r", device)
-    criterion = torch.nn.CrossEntropyLoss() # FocalLoss(gamma=2)
+    criterion = torch.nn.CrossEntropyLoss()  # FocalLoss(gamma=2)
     model = get_resnet(opt, args.mode)
 
     # 你注意这个细节，这个是一个网络中的"层";需要传入num_classes，也就是说，多少个人的人脸就是多少类，这里大概是1万左右（不同数据集不同）
@@ -121,6 +121,10 @@ def main(args):
                 images = images.to(device)
                 label = label.to(device).long()
 
+                if np.isnan(images).any():
+                    logger.error("图片数据出现异常：epoch:%d/step:%d", epoch, step_of_epoch)
+                    continue
+
                 logger.debug("【训练】训练数据：%r", images.shape)
                 logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
                 feature = model(images)
@@ -142,6 +146,8 @@ def main(args):
                 optimizer.step()
 
                 latest_loss = loss.item()
+                if math.isnan(latest_loss):
+                    logger.error("训练过程中出现loss为nan, epoch[%d], step[%d]", epoch, step_of_epoch)
 
                 # 每隔N个batch，就算一下这个批次的正确率
                 if total_steps % opt.print_batch == 0:

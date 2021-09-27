@@ -32,7 +32,7 @@ class Net(nn.Module):
     def __init__(self, model, mode):
         super(Net, self).__init__()
 
-        # 取掉model的后两层
+        # 取掉model的后两层：全局平均池化 和 FC
         self.resnet_layer = nn.Sequential(*list(model.children())[:-2])
 
         if mode == "mnist":
