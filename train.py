@@ -71,7 +71,7 @@ def main(args):
 
     # 准备神经网络
     logger.info("训练使用:%r", device)
-    criterion = FocalLoss(gamma=2)
+    criterion = torch.nn.CrossEntropyLoss() # FocalLoss(gamma=2)
     model = get_resnet(opt, args.mode)
 
     # 你注意这个细节，这个是一个网络中的"层";需要传入num_classes，也就是说，多少个人的人脸就是多少类，这里大概是1万左右（不同数据集不同）
