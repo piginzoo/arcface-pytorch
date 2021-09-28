@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torchsummary import summary
 
 from config.config import Config
-from models import get_resnet
+from models import get_resnet, nn
 from models.metrics import ArcMarginProduct
 from test import MnistTester, FaceTester
 from utils import init_log
@@ -79,7 +79,10 @@ def main(args):
     if args.mode == "mnist":
         # 可视化要求最后输出的维度不是512，而是2，是512之后再接个2
         # metric_fc = ArcMarginProduct(in_features=2, out_features=10, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
-        metric_fc = torch.nn.Linear(2,10)
+        metric_fc = nn.Sequential(
+            torch.nn.Linear(2, 10),
+            nn.BatchNorm1d(10),
+            nn.ReLU())
     else:
         metric_fc = ArcMarginProduct(512, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
 
@@ -88,9 +91,14 @@ def main(args):
     # 为何loss，也需要用这么操作一下？
     metric_fc.to(device)  # 用xxx设备
     metric_fc = DataParallel(metric_fc)  # 走并行模式
-    optimizer = torch.optim.Adam([{'params': model.parameters()}, {'params': metric_fc.parameters()}],
-                                 lr=opt.lr,
-                                 weight_decay=opt.weight_decay)
+    optimizer = torch.optim.Adam([{
+        'params': model.parameters(),
+        'lr': '0.0001'
+    }, {
+        'params': metric_fc.parameters(),
+        'lr': '0.1'
+    }])  # 因为是微调，所以设成小一些的0.001，否则从头开始的话，一般都是设成0.1
+    # weight_decay=opt.weight_decay) # 这个是正则用，我决定没必要，就算了
     early_stopper = EarlyStop(opt.early_stop)
 
     # 为了打印网络结构，需要传入一个input的shape
@@ -126,12 +134,11 @@ def main(args):
                 images = images.to(device)
                 label = label.to(device).long()
 
-
                 logger.debug("【训练】训练数据：%r", images.shape)
                 logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
                 feature = model(images)
                 logger.debug("【训练】训练输出features：%r", feature)
-                output = metric_fc(feature)# , label)  #
+                output = metric_fc(feature)  # , label)  #
                 logger.debug("【训练】训练输出output：%r", feature)
                 loss = criterion(output, label)
 

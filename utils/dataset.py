@@ -17,8 +17,8 @@ def get_mnist_dataset(train,opt):
                              transform=transforms.Compose([
                                  transforms.Resize(opt.input_shape[1:]),
                                  transforms.ToTensor(),
-                                 transforms.Lambda(lambda x: x.repeat(3, 1, 1)),  # gray->rgb
-                                 transforms.Normalize((0.1307,), (0.3081,))]))
+                                 transforms.Lambda(lambda x: x.repeat(3, 1, 1))]))  # gray->rgb
+                                 # transforms.Normalize((0.1307,), (0.3081,))]))
     return dataset
 
 class Dataset(data.Dataset):
