@@ -93,10 +93,10 @@ def main(args):
     metric_fc = DataParallel(metric_fc)  # 走并行模式
     optimizer = torch.optim.Adam([{
         'params': model.parameters(),
-        'lr': '0.0001'
+        'lr': 0.0001
     }, {
         'params': metric_fc.parameters(),
-        'lr': '0.1'
+        'lr': 0.1
     }])  # 因为是微调，所以设成小一些的0.001，否则从头开始的话，一般都是设成0.1
     # weight_decay=opt.weight_decay) # 这个是正则用，我决定没必要，就算了
     early_stopper = EarlyStop(opt.early_stop)
