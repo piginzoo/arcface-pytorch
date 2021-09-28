@@ -71,11 +71,11 @@ class ArcMarginProduct(nn.Module):
         再多说一句，arcface，就是要算出10000个θ，这1万个θ，接下来
         """
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))  # |x| * |w|
-        logger.debug("[网络输出]cos：%r", cosine.shape)
+        # logger.debug("[网络输出]cos：%r", cosine.shape)
 
         # clamp，min~max间，都夹到范围内 : https://blog.csdn.net/weixin_40522801/article/details/107904282
         sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(0,1))
-        logger.debug("[网络输出]sin：%r", sine.shape)
+        # logger.debug("[网络输出]sin：%r", sine.shape)
 
         # 和差化积，cos(θ + m) = cos(θ) * cos(m) - sin(θ) * sin(m)
         cos_θ_m = cosine * self.cos_m - sine * self.sin_m
@@ -90,7 +90,7 @@ class ArcMarginProduct(nn.Module):
 
         # --------------------------- convert label to one-hot ---------------------------
         one_hot = torch.zeros(cosine.size(), device=self.device)
-        logger.debug("[网络输出]one_hot：%r", one_hot.shape)
+        # logger.debug("[网络输出]one_hot：%r", one_hot.shape)
 
         # input.scatter_(dim, index, src)：从【src源数据】中获取的数据，按照【dim指定的维度】和【index指定的位置】，替换input中的数据。
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
@@ -101,10 +101,10 @@ class ArcMarginProduct(nn.Module):
         # 所以这个'骚操作'是为了干这件事：
         output = (one_hot * cos_θ_m) + ((1.0 - one_hot) * cosine)
 
-        logger.debug("[网络输出]output：%r", output.shape)
+        # logger.debug("[网络输出]output：%r", output.shape)
         output *= self.s
 
-        logger.debug("[网络输出]arcface的loss最终结果：%r", output.shape)
+        # logger.debug("[网络输出]arcface的loss最终结果：%r", output.shape)
         # 输出是啥？？？ => torch.Size([10, 10178]
         # 自问自答：输出是softmax之前的那个向量，注意，softmax只是个放大器，
         # 我们就是在准备这个放大器的输入的那个向量，是10178维度的，[cosθ_0,cosθ_1,...,cos(θ_{i-1}),cos(θ_i+m),cos(θ_{i+1}),...]

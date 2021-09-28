@@ -40,8 +40,8 @@ class Net(nn.Module):
                 nn.Linear(5 * 5 * 512, 512),
                 nn.BatchNorm1d(512),
                 nn.ReLU(),
-                nn.Linear(512, 2),
-                nn.BatchNorm1d(2),
+                nn.Linear(512, 512),
+                nn.BatchNorm1d(512),
                 nn.ReLU())
             logger.info("构建可视化用模型（输出2维）")
         else:

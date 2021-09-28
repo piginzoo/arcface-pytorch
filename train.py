@@ -78,9 +78,11 @@ def main(args):
     # 另外第一个入参是输入维度，是512，why？是因为resnet50网络的最后的输出就是512：self.fc5 = nn.Linear(512 * 8 * 8, 512)
     if args.mode == "mnist":
         # 可视化要求最后输出的维度不是512，而是2，是512之后再接个2
-        # metric_fc = ArcMarginProduct(in_features=2, out_features=10, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
+        metric_fc = ArcMarginProduct(in_features=2, out_features=10, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
+
+        # 改成最简单的全连接，主要是测试看看情况如何，结果是可以到94%的正确率（train集合）
         metric_fc = nn.Sequential(
-            torch.nn.Linear(2, 10),
+            torch.nn.Linear(512, 10),
             nn.BatchNorm1d(10),
             nn.ReLU())
     else:
