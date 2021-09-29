@@ -64,6 +64,7 @@ class TensorboardVisualizer(object):
         # for tensorflow1.x，代码保留
         # self.summaryWriter.add_scalar(tag=name, scalar_value=value, global_step=step)
         with self.summaryWriter.as_default():
+            logger.debug("%s：%r",name, value)
             tf.summary.scalar(name, value, step=step)
 
     def image(self, images, name):
@@ -100,9 +101,8 @@ class TensorboardVisualizer(object):
         plt.savefig(buf, format='png')
         plt.close(figure)
         buf.seek(0)
-        image = np.array(Image.open(buf))
-        image_string = buf.getvalue()
-        height, width, channel = image.shape
+
+        Image.open(buf).save("logs/test.png")
 
         # for tensorflow1.x，代码保留
         # image = tf.Summary.Image(height=height, width=width, colorspace=channel, encoded_image_string=image_string)

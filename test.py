@@ -61,10 +61,6 @@ class MnistTester(Tester):
             # bugfix:...found at least two devices, cuda:0 and cpu!
             imgs_of_batch, label = imgs_of_batch.to(self.device), label.to(self.device)
 
-            if index > self.test_size:
-                logger.debug("[验证] 测试数据集长度超限：%d，模型计算验证数据结束", index)
-                break
-
             # 预测
             with torch.no_grad():
                 output, features = model(imgs_of_batch)
@@ -241,7 +237,7 @@ class FaceTester(Tester):
             different_faces.append(list(image_feature_dicts.values()))  # 只保留value数据，多个人脸
         t = time.time() - start
 
-        logger.info('[计算%d个人的%d张人脸] 耗时: %.2f秒, 每张耗时：%.4f秒', opt.test_size, count, t, t / len(face_dirs))
+        logger.info('[计算%d个人的%d张人脸] 耗时: %.2f秒, 每张耗时：%.4f秒', opt.len(face_dirs), count, t, t / count)
 
         return different_faces
 

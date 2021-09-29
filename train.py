@@ -132,7 +132,7 @@ def main(args):
                     label = label.cpu().detach().numpy()
                     images = images.cpu().detach().numpy()
 
-                    logger.debug("网络输出：%r",output)
+
 
                     output = np.argmax(output, axis=1)
                     train_batch_acc = np.mean((output == label).astype(int))
@@ -145,6 +145,7 @@ def main(args):
                                 loss.item(),
                                 train_batch_acc)
                     visualizer.text(total_steps, loss.item(), name='train_loss')
+                    logger.debug("train_batch_acc：%r", train_batch_acc)
                     visualizer.text(total_steps, train_batch_acc, name='train_acc')
                     visualizer.image(images, name="train_images")
             except:
