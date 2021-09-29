@@ -97,12 +97,9 @@ class TensorboardVisualizer(object):
 
         # plt.show()
         buf = io.BytesIO()
-        plt.savefig(buf, format='png')
+        plt.savefig(buf, format='jpg')
         plt.close(figure)
         buf.seek(0)
-        image = np.array(Image.open(buf))
-        image_string = buf.getvalue()
-        height, width, channel = image.shape
 
         # for tensorflow1.x，代码保留
         # image = tf.Summary.Image(height=height, width=width, colorspace=channel, encoded_image_string=image_string)
@@ -113,7 +110,7 @@ class TensorboardVisualizer(object):
 
         # for tensorflow2.x
         with self.summaryWriter.as_default():
-            image = tf.image.decode_png(buf.getvalue(), channels=4)
+            image = tf.image.decode_jpeg(buf.getvalue(), channels=3)
             image = tf.expand_dims(image, 0)
             tf.summary.image(name, image, step=step)
             # logger.debug("embedding plot:%r", image)
