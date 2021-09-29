@@ -10,7 +10,9 @@ from torchvision.transforms import transforms
 logger = logging.getLogger(__name__)
 
 
-def get_dataset(train, type, opt):
+
+
+def get_dataset(train,type,opt):
     # 准备数据，如果mode是"mnist"，使用MNIST数据集
     # 可视化，其实就是使用MNIST数据集，训练一个2维向量
     # mnist数据，用于可视化的测试
@@ -29,8 +31,7 @@ def get_dataset(train, type, opt):
         # 正常的人脸数据
         dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
 
-    return dataset[:100]
-
+    return dataset
 
 class Dataset(data.Dataset):
     """

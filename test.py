@@ -50,13 +50,14 @@ class MnistTester(Tester):
         self.data_loader = DataLoader(dataset,
                                       batch_size=32,  # 测试 = 3 | 32
                                       shuffle=True,
-                                      num_workers=0)[:100]
+                                      num_workers=0)
         self.device = device
 
     def acc(self, model, opt):
         correct = 0
         start = time.time()
         for index, data in enumerate(self.data_loader):
+            if index>10: break
             imgs_of_batch, label = data
             # bugfix:...found at least two devices, cuda:0 and cpu!
             imgs_of_batch, label = imgs_of_batch.to(self.device), label.to(self.device)
