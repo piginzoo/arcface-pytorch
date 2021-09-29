@@ -29,7 +29,7 @@ def get_dataset(train, type, opt):
         # 正常的人脸数据
         dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
 
-    return dataset
+    return dataset[:100]
 
 
 class Dataset(data.Dataset):

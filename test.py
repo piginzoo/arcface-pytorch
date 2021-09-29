@@ -50,7 +50,7 @@ class MnistTester(Tester):
         self.data_loader = DataLoader(dataset,
                                       batch_size=32,  # 测试 = 3 | 32
                                       shuffle=True,
-                                      num_workers=0)
+                                      num_workers=0)[:100]
         self.device = device
 
     def acc(self, model, opt):
