@@ -133,8 +133,6 @@ def main(args):
                     label = label.cpu().detach().numpy()
                     images = images.cpu().detach().numpy()
 
-
-
                     output = np.argmax(output, axis=1)
                     train_batch_acc = np.float(np.mean((output == label).astype(int)))
                     speed = total_steps / (time.time() - start)

@@ -112,10 +112,12 @@ class TensorboardVisualizer(object):
         with self.summaryWriter.as_default():
             image = tf.image.decode_jpeg(buf.getvalue(), channels=3)
             image = tf.expand_dims(image, 0) # 加个批次
-            tf.summary.image(name, image, step=step)
-            self.summaryWriter.flush()
-            logger.debug("embedding plot:%r", image)
-            logger.info("保存Embeding图保存到tensorboad: %r, step: %d", image.shape,step)
+            r = tf.summary.image(name, image, step=step)
+            if not r:
+                logger.error("保存Embeding图保存到tensorboad失败！")
+            else:
+                logger.debug("embedding plot:%r", image)
+                logger.info("保存Embeding图保存到tensorboad: %r, step: %d", image.shape,step)
 
     # https://www.cnblogs.com/cloud-ken/p/9329703.html
     # 生成可视化最终输出层向量所需要的日志文件
