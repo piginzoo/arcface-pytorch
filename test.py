@@ -60,7 +60,7 @@ class MnistTester(Tester):
         for index, data in enumerate(self.data_loader):
             imgs_of_batch, label = data
             # bugfix:...found at least two devices, cuda:0 and cpu!
-            data, label = imgs_of_batch.to(self.device), label.to(self.device)
+            imgs_of_batch, label = imgs_of_batch.to(self.device), label.to(self.device)
 
             if index > self.test_size:
                 logger.debug("[验证] 测试数据集长度超限：%d，模型计算验证数据结束", index)
@@ -68,7 +68,7 @@ class MnistTester(Tester):
 
             # 预测
             with torch.no_grad():
-                features = model(imgs_of_batch)
+                output, features = model(imgs_of_batch)
 
                 # 本来还想要再经过一下arcface的metrics，也就是论文的那个s*cos(θ+m)，
                 # 但是，突然反思了一下，觉得不对，因为那个是需要同时传入label，我靠，我用网络就是为了argmax得到label，你让我传给你label，什么鬼？
@@ -77,8 +77,6 @@ class MnistTester(Tester):
                 # 且通过一堆人脸(6000个）得到一个阈值，来判断是不是同一人脸，人家是在做这事！
                 #
                 # 而我们这个acc，就是要简单的判断是哪个数字，不是要判断2张图是不是同一数字啊。
-                #
-                output = metric(output)  # , target).item()
 
                 # 我只要看从resnet出来的向量就可以，argmax的那个就是最像的类别（不用softmax了，softmax只是为了放大而已）
                 pred = output.max(1, keepdim=True)[1]
