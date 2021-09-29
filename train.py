@@ -135,7 +135,7 @@ def main(args):
 
 
                     output = np.argmax(output, axis=1)
-                    train_batch_acc = np.mean((output == label).astype(int))
+                    train_batch_acc = np.float(np.mean((output == label).astype(int)))
                     speed = total_steps / (time.time() - start)
                     logger.info("[可视化] Epoch[%s]/迭代[%d],耗时%.2f秒,速度[%.0f步/秒],loss[%.4f],batch_acc[%.4f]",
                                 epoch,
@@ -145,7 +145,6 @@ def main(args):
                                 loss.item(),
                                 train_batch_acc)
                     visualizer.text(total_steps, loss.item(), name='train_loss')
-                    logger.debug("train_batch_acc：%r, %r", train_batch_acc,type(train_batch_acc))
                     visualizer.text(total_steps, train_batch_acc, name='train_acc')
                     visualizer.image(images, name="train_images")
             except:
