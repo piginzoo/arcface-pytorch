@@ -145,7 +145,7 @@ def main(args):
                                 loss.item(),
                                 train_batch_acc)
                     visualizer.text(total_steps, loss.item(), name='train_loss')
-                    logger.debug("train_batch_acc：%r", train_batch_acc)
+                    logger.debug("train_batch_acc：%r, %r", train_batch_acc,type(train_batch_acc))
                     visualizer.text(total_steps, train_batch_acc, name='train_acc')
                     visualizer.image(images, name="train_images")
             except:

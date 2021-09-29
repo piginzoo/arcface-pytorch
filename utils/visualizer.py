@@ -63,7 +63,7 @@ class TensorboardVisualizer(object):
         # for tensorflow1.x，代码保留
         # self.summaryWriter.add_scalar(tag=name, scalar_value=value, global_step=step)
         with self.summaryWriter.as_default():
-            logger.debug("%s：%r",name, value)
+            logger.debug("%s：%r, %r",name, value, type(value))
             tf.summary.scalar(name, value, step=step)
 
     def image(self, images, name):
