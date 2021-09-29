@@ -111,9 +111,10 @@ class TensorboardVisualizer(object):
         # for tensorflow2.x
         with self.summaryWriter.as_default():
             image = tf.image.decode_jpeg(buf.getvalue(), channels=3)
-            image = tf.expand_dims(image, 0)
+            image = tf.expand_dims(image, 0) # 加个批次
             tf.summary.image(name, image, step=step)
-            # logger.debug("embedding plot:%r", image)
+            tf.summary.flush()
+            logger.debug("embedding plot:%r", image)
             logger.info("保存Embeding图保存到tensorboad: %r, step: %d", image.shape,step)
 
     # https://www.cnblogs.com/cloud-ken/p/9329703.html
