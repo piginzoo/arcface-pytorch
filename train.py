@@ -6,17 +6,14 @@ import time
 
 import numpy as np
 import torch
-from torch.nn import DataParallel
 from torch.utils.data import DataLoader
 from torchsummary import summary
 
+import test
 from config.config import Config
-from models import get_resnet, nn
-from models.metrics import ArcMarginProduct
-from test import MnistTester, FaceTester
+from models import Net
+from utils import dataset as data_loader
 from utils import init_log
-from utils.dataset import Dataset
-from utils.dataset import get_mnist_dataset
 from utils.early_stop import EarlyStop
 from utils.visualizer import TensorboardVisualizer
 
@@ -34,24 +31,13 @@ def save_model(opt, epoch, model, train_size, loss, acc):
 
 def main(args):
     opt = Config()
-    train_size = None
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
 
-    # 准备数据，如果mode是"mnist"，使用MNIST数据集
-    # 可视化，其实就是使用MNIST数据集，训练一个2维向量
-    # mnist数据，用于可视化的测试
-    if args.mode == "mnist":
-        logger.info("训练MNIST数据 >>>>> ")
-        dataset = get_mnist_dataset(True, opt)
-        tester = MnistTester(opt, device)
+    # 测试类
+    tester = test.get_tester(args.mode, opt, device)
 
-        # 测试
-        # opt.max_epoch = 3
-        # train_size = 3
-    else:
-        # 正常的人脸数据
-        dataset = Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
-        tester = FaceTester()
+    # 训练数据加载器
+    dataset = data_loader.get_dataset(train=True, type=args.mode, opt=opt)
     trainloader = DataLoader(dataset,
                              batch_size=opt.train_batch_size,
                              shuffle=True,
@@ -72,35 +58,20 @@ def main(args):
     # 准备神经网络
     logger.info("训练使用:%r", device)
     criterion = torch.nn.CrossEntropyLoss()  # FocalLoss(gamma=2)
-    model = get_resnet(opt, args.mode)
 
-    # 你注意这个细节，这个是一个网络中的"层";需要传入num_classes，也就是说，多少个人的人脸就是多少类，这里大概是1万左右（不同数据集不同）
-    # 另外第一个入参是输入维度，是512，why？是因为resnet50网络的最后的输出就是512：self.fc5 = nn.Linear(512 * 8 * 8, 512)
-    if args.mode == "mnist":
-        # 可视化要求最后输出的维度不是512，而是2，是512之后再接个2
-        metric_fc = ArcMarginProduct(in_features=2, out_features=10, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
-
-        # 改成最简单的全连接，主要是测试看看情况如何，结果是可以到94%的正确率（train集合）
-        metric_fc = nn.Sequential(
-            torch.nn.Linear(512, 10),
-            nn.BatchNorm1d(10),
-            nn.ReLU())
-    else:
-        metric_fc = ArcMarginProduct(512, opt.num_classes, s=30, m=0.5, easy_margin=opt.easy_margin, device=device)
-
+    # 创建模型
+    model = Net(args.mode, device, opt)
     model.to(device)
-    model = DataParallel(model)
-    # 为何loss，也需要用这么操作一下？
-    metric_fc.to(device)  # 用xxx设备
-    metric_fc = DataParallel(metric_fc)  # 走并行模式
+
+    # 创建优化器
     optimizer = torch.optim.Adam([{
-        'params': model.parameters(),
+        'params': model.resnet_layer.parameters(),
         'lr': 0.0001
     }, {
-        'params': metric_fc.parameters(),
+        'params': model.metric_fc.parameters(),
         'lr': 0.1
     }])  # 因为是微调，所以设成小一些的0.001，否则从头开始的话，一般都是设成0.1
-    # weight_decay=opt.weight_decay) # 这个是正则用，我决定没必要，就算了
+
     early_stopper = EarlyStop(opt.early_stop)
 
     # 为了打印网络结构，需要传入一个input的shape
@@ -120,28 +91,22 @@ def main(args):
         epoch_start = time.time()
         for step_of_epoch, data in enumerate(trainloader):
 
-            # 这个是为了测试方便，只截取很短的数据训练
-            if train_size and step_of_epoch > train_size:
-                logger.info("当前epoch内step[%d] > 训练最大数量[%d]，此epoch提前结束", step_of_epoch, train_size)
-                break
             total_steps = total_steps + 1
 
             try:
+                # 准备batch数据/标签
                 images, label = data
+                # logger.debug("图像数据：%r",images)
                 if np.isnan(images.numpy()).any():
                     logger.error("图片数据出现异常：epoch:%d/step:%d", epoch, step_of_epoch)
                     continue
-                # logger.debug("图像数据：%r",images)
-
                 images = images.to(device)
                 label = label.to(device).long()
 
-                logger.debug("【训练】训练数据：%r", images.shape)
-                logger.debug("【训练】模型要求输入：%r", list(model.parameters())[0].shape)
-                feature = model(images)
-                logger.debug("【训练】训练输出features：%r", feature)
-                output = metric_fc(feature)  # , label)  #
-                logger.debug("【训练】训练输出output：%r", feature)
+                # 使用Resnet抽取特征
+                output, _ = model(images)
+
+                # 求loss
                 loss = criterion(output, label)
 
                 # 以SGD为例，是算一个batch计算一次梯度，然后进行一次梯度更新。这里梯度值就是对应偏导数的计算结果。
@@ -149,11 +114,13 @@ def main(args):
                 # 所以在下一次梯度更新的时候，先使用optimizer.zero_grad把梯度信息设置为0。
                 optimizer.zero_grad()
 
+                # 反向梯度下降
                 loss.backward()
 
-                # 做梯度裁剪
+                # 做梯度裁剪，防止梯度爆炸
                 torch.nn.utils.clip_grad_norm(model.parameters(), max_norm=1)
 
+                # 优化器
                 optimizer.step()
 
                 latest_loss = loss.item()
@@ -189,7 +156,7 @@ def main(args):
         acc = -1
         try:
             model.eval()
-            acc = tester.acc(model, metric_fc, opt)  # <---- 预测
+            acc = tester.acc(model, opt)  # <---- 预测
         except:
             logger.exception("验证出现异常，继续...")
 
@@ -211,9 +178,9 @@ def main(args):
         visualizer.text(total_steps, acc, name='test_acc')
 
         if args.mode == "mnist":
-            features, labels = tester.calculate_features(model, opt)
-            logger.debug("计算完的 [%d] 个人脸features", len(features))
-            visualizer.plot_2d_embedding(name='classes', features=features, labels=labels, step=total_steps)
+            features_2d, labels = tester.calculate_features(model, opt)
+            logger.debug("计算完的 [%d] 个人脸features", len(features_2d))
+            visualizer.plot_2d_embedding(name='classes', features=features_2d, labels=labels, step=total_steps)
 
     logger.info("训练结束，耗时%.2f小时，共%d个epochs，%d步",
                 (time.time() - start) / 3600,

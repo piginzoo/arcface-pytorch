@@ -93,7 +93,7 @@ class TensorboardVisualizer(object):
             mask = (label == labels)
             label_features = features[mask]
 
-            plt.scatter(label_features[:, 0], label_features[:, 1])
+            plt.scatter(label_features[:, 0], label_features[:, 1]) # 我靠，只显示前2维，高维也只是前2维
 
         # plt.show()
         buf = io.BytesIO()

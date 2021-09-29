@@ -24,7 +24,7 @@ class ArcMarginProduct(nn.Module):
         self.out_features = out_features  # 这个就是人脸分类，1万多，就是不同人
         self.s = s
         self.m = m
-        self.weight = Parameter(torch.FloatTensor(out_features, in_features))
+        self.weight = Parameter(torch.FloatTensor(out_features, in_features)) # 512x10000(人脸分类) = 512万个参数
         nn.init.xavier_uniform_(self.weight)  # 初始化
 
         self.easy_margin = easy_margin
@@ -69,6 +69,8 @@ class ArcMarginProduct(nn.Module):
         所以，这个代码就是实现了这个逻辑。没问题。
         
         再多说一句，arcface，就是要算出10000个θ，这1万个θ，接下来
+        
+        normalize, 是x/x的二范数，啥是二范数来着？就是sqrt(x1^2+x2^2+...+xn^2)
         """
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))  # |x| * |w|
         # logger.debug("[网络输出]cos：%r", cosine.shape)

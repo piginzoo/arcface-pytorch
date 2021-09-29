@@ -16,9 +16,20 @@ import torch
 from torch.utils.data import DataLoader
 
 import utils
-from utils.dataset import get_mnist_dataset
+from utils.dataset import get_dataset
 
 logger = logging.getLogger(__name__)
+
+
+def get_tester(type, opt, device):
+    # 准备数据，如果mode是"mnist"，使用MNIST数据集
+    # 可视化，其实就是使用MNIST数据集，训练一个2维向量
+    # mnist数据，用于可视化的测试
+    if type == "mnist":
+        tester = MnistTester(opt, device)
+    else:
+        tester = FaceTester()
+    return tester
 
 
 class Tester():
@@ -35,7 +46,7 @@ class Tester():
 
 class MnistTester(Tester):
     def __init__(self, opt, device):
-        dataset = get_mnist_dataset(False, opt)
+        dataset = get_dataset(train=False, type='mnist', opt=opt)
         self.data_loader = DataLoader(dataset,
                                       batch_size=32,  # 测试 = 3 | 32
                                       shuffle=True,
@@ -43,7 +54,7 @@ class MnistTester(Tester):
         self.test_size = 500  # 测试是 = 10 | 500
         self.device = device
 
-    def acc(self, model, metric, opt):
+    def acc(self, model, opt):
         correct = 0
         start = time.time()
         for index, data in enumerate(self.data_loader):
@@ -57,7 +68,7 @@ class MnistTester(Tester):
 
             # 预测
             with torch.no_grad():
-                output = model(x=imgs_of_batch)
+                features = model(imgs_of_batch)
 
                 # 本来还想要再经过一下arcface的metrics，也就是论文的那个s*cos(θ+m)，
                 # 但是，突然反思了一下，觉得不对，因为那个是需要同时传入label，我靠，我用网络就是为了argmax得到label，你让我传给你label，什么鬼？
@@ -67,7 +78,8 @@ class MnistTester(Tester):
                 #
                 # 而我们这个acc，就是要简单的判断是哪个数字，不是要判断2张图是不是同一数字啊。
                 #
-                output = metric(output) #, target).item()
+                output = metric(output)  # , target).item()
+
                 # 我只要看从resnet出来的向量就可以，argmax的那个就是最像的类别（不用softmax了，softmax只是为了放大而已）
                 pred = output.max(1, keepdim=True)[1]
 
@@ -75,8 +87,8 @@ class MnistTester(Tester):
 
         acc = correct / (index * self.data_loader.batch_size)
         logger.info("测试了%d条，正确%d条，正确率：%.4f，耗时：%.2f",
-                     index * self.data_loader.batch_size,
-                     correct, acc, time.time() - start)
+                    index * self.data_loader.batch_size,
+                    correct, acc, time.time() - start)
         return acc
 
     def calculate_features(self, model, image_paths):
@@ -87,13 +99,13 @@ class MnistTester(Tester):
             data = data.to(self.device)  # 放到显存中，用于加速
             # you don't need to calculate gradients for forward and backward phase.
             with torch.no_grad():
-                output = model(x=data)
-                output = output.cpu()  # 用cpu()值替换掉原引用，导致旧引用回收=>GPU内存回收，解决OOM问题
+                _, __features = model(x=data)
+                __features = __features.cpu()  # 用cpu()值替换掉原引用，导致旧引用回收=>GPU内存回收，解决OOM问题
 
             if features is None:
-                features = output.numpy()
+                features = __features.numpy()
             else:
-                features = np.concatenate((features, output.numpy()))
+                features = np.concatenate((features, __features.numpy()))
             if labels is None:
                 labels = label.numpy()
             else:
