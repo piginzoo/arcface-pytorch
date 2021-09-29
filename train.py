@@ -53,7 +53,6 @@ def main(args):
         opt.test_size = 3
         opt.print_batch = 1
         opt.test_pair_size = 6
-        train_size = 5
 
     # 准备神经网络
     logger.info("训练使用:%r", device)
@@ -65,11 +64,8 @@ def main(args):
 
     # 创建优化器
     optimizer = torch.optim.Adam([{
-        'params': model.resnet_layer.parameters(),
-        'lr': 0.0001
-    }, {
-        'params': model.metric_fc.parameters(),
-        'lr': 0.1
+        'params': model.parameters(),
+        'lr': 0.001
     }])  # 因为是微调，所以设成小一些的0.001，否则从头开始的话，一般都是设成0.1
 
     early_stopper = EarlyStop(opt.early_stop)
