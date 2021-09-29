@@ -51,7 +51,6 @@ class MnistTester(Tester):
                                       batch_size=32,  # 测试 = 3 | 32
                                       shuffle=True,
                                       num_workers=0)
-        self.test_size = 500  # 测试是 = 10 | 500
         self.device = device
 
     def acc(self, model, opt):
@@ -90,12 +89,11 @@ class MnistTester(Tester):
         return acc
 
     def calculate_features(self, model, image_paths):
-        test_loader = list(self.data_loader)[:self.test_size]
         features = None
         labels = None
-        for data, label in test_loader:
+        for data, label in self.data_loader:
             data = data.to(self.device)  # 放到显存中，用于加速
-            # you don't need to calculate gradients for forward and backward phase.
+            # you don't need to calculate gradients for forward and backward phase.防止OOM
             with torch.no_grad():
                 _, __features = model(x=data)
                 __features = __features.cpu()  # 用cpu()值替换掉原引用，导致旧引用回收=>GPU内存回收，解决OOM问题

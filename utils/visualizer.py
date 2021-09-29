@@ -116,7 +116,8 @@ class TensorboardVisualizer(object):
             image = tf.image.decode_png(buf.getvalue(), channels=4)
             image = tf.expand_dims(image, 0)
             tf.summary.image(name, image, step=step)
-            logger.info("保存Embeding图保存到tensorboad: %r", image.shape)
+            logger.debug("embedding plot:%r", image)
+            logger.info("保存Embeding图保存到tensorboad: %r, step: %d", image.shape,step)
 
     # https://www.cnblogs.com/cloud-ken/p/9329703.html
     # 生成可视化最终输出层向量所需要的日志文件
@@ -172,6 +173,10 @@ class TensorboardVisualizer(object):
 
 
 class VisdomVisualizer(object):
+    """
+    如果要使用visdom，需要启动一个服务器，然后连接到这个服务器上，
+    vis.check_connection()就是在连接服务器上，
+    """
 
     def __init__(self, env, port):
         if not utils.check_port_in_use(port):

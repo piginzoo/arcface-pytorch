@@ -58,7 +58,6 @@ class Net(nn.Module):
             self.metric_fc = ArcMarginProduct(512, num_classes, s=30, m=0.5,
                                               easy_margin=config.easy_margin,
                                               device=device)
-            self.class_fc = nn.Sequential(Lambda(lambda x: x))
             logger.info("构建正常模型（输出512维）")
 
     def __num_flat_features(self, x):
