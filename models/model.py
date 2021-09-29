@@ -10,7 +10,6 @@ import logging
 
 import torch.nn as nn
 from torchvision import models
-from torchvision.transforms import Lambda
 
 from models.metrics import ArcMarginProduct
 
@@ -44,7 +43,7 @@ class Net(nn.Module):
 
         self.extract_2dim_layer = None
         if type == "mnist":
-            self.extract_2dim_layer = nn.Sequential(
+            self.extract_layer = nn.Sequential(
                 nn.Linear(kernel_size * kernel_size * 512, 2),  # 163万个参数/resnet18是1100万个参数
                 nn.BatchNorm1d(2),
                 nn.ReLU())
@@ -54,6 +53,7 @@ class Net(nn.Module):
                 nn.ReLU())
             logger.info("构建可视化用模型（输出2维）")
         else:
+            self.extract_layer = nn.Identity()
             # arcface里面包含了weight，类上面的Linear的weight
             self.metric_fc = ArcMarginProduct(512, num_classes, s=30, m=0.5,
                                               easy_margin=config.easy_margin,
@@ -72,10 +72,7 @@ class Net(nn.Module):
         x = x.view(-1, self.__num_flat_features(x))  # flat it
 
         # 如果self.extract_2dim_layer is not none， call it
-        features = None
-        if self.extract_2dim_layer:
-            x = self.extract_2dim_layer(x)
-            features = x
+        features = self.extract_layer(x)
 
-        x = self.metric_fc(x)
+        x = self.metric_fc(features)
         return x, features

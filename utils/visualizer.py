@@ -58,7 +58,6 @@ class TensorboardVisualizer(object):
         if not os.path.exists(__log_dir):
             os.makedirs(__log_dir)
         self.summaryWriter = tf.summary.create_file_writer(logdir=__log_dir)  # tf1.x:SummaryWriter(log_dir=__log_dir)
-        self.log_dir = __log_dir
 
     def text(self, step, value, name):
         # for tensorflow1.x，代码保留
@@ -116,7 +115,7 @@ class TensorboardVisualizer(object):
             image = tf.image.decode_png(buf.getvalue(), channels=4)
             image = tf.expand_dims(image, 0)
             tf.summary.image(name, image, step=step)
-            logger.debug("embedding plot:%r", image)
+            # logger.debug("embedding plot:%r", image)
             logger.info("保存Embeding图保存到tensorboad: %r, step: %d", image.shape,step)
 
     # https://www.cnblogs.com/cloud-ken/p/9329703.html
