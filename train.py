@@ -179,7 +179,7 @@ def main(args):
             logger.debug("计算完的 [%d] 个人脸features", len(features_2d))
 
             # 做一个归一化操作
-            features_2d = features_2d / np.linalg.norm(features_2d)
+            features_2d = features_2d / np.linalg.norm(features_2d,axis=1)
             visualizer.plot_2d_embedding(name='classes', features=features_2d, labels=labels, step=total_steps)
 
     logger.info("训练结束，耗时%.2f小时，共%d个epochs，%d步",
