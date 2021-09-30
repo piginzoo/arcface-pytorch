@@ -6,6 +6,7 @@ import time
 
 import numpy as np
 import torch
+from sklearn.preprocessing import normalize
 from torch.utils.data import DataLoader
 from torchsummary import summary
 
@@ -88,7 +89,6 @@ def main(args):
         for step_of_epoch, data in enumerate(trainloader):
 
             total_steps = total_steps + 1
-
 
             try:
                 # 准备batch数据/标签
@@ -179,7 +179,8 @@ def main(args):
             logger.debug("计算完的 [%d] 个人脸features", len(features_2d))
 
             # 做一个归一化操作
-            features_2d = features_2d / np.linalg.norm(features_2d,axis=1)
+
+            features_2d = normalize(features_2d, axis=1)
             visualizer.plot_2d_embedding(name='classes', features=features_2d, labels=labels, step=total_steps)
 
     logger.info("训练结束，耗时%.2f小时，共%d个epochs，%d步",
