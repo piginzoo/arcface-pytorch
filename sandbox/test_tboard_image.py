@@ -31,6 +31,6 @@ if __name__ == '__main__':
     logger.debug(image.shape)
     image = np.transpose(image, (2, 0, 1))
     logger.debug(image.shape)
-    images = np.array([image])
-    visualizer.image(images, name='train_images')
+    # images = np.array([image])
+    visualizer.image(image, name='train_images')
     visualizer.plot_2d_embedding("test_plot", data, labels, 0)

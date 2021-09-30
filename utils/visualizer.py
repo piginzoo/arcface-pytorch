@@ -4,6 +4,7 @@ import os
 import warnings
 from datetime import datetime
 
+import cv2
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,27 +31,35 @@ class TensorboardVisualizer(object):
     """
 
     def __init__(self, log_dir):
-        __log_dir = os.path.join(log_dir, datetime.strftime(datetime.now(), '%Y%m%d-%H%M'))
+        self.log_dir = os.path.join(log_dir, datetime.strftime(datetime.now(), '%Y%m%d-%H%M'))
 
-        if not os.path.exists(__log_dir):
-            os.makedirs(__log_dir)
-        self.summaryWriter = tf.summary.create_file_writer(logdir=__log_dir)  # tf1.x:SummaryWriter(log_dir=__log_dir)
+        if not os.path.exists(self.log_dir):    os.makedirs(self.log_dir)
 
     def text(self, step, value, name):
-        # for tensorflow1.x，代码保留
-        # self.summaryWriter.add_scalar(tag=name, scalar_value=value, global_step=step)
-        with self.summaryWriter.as_default():
-            # logger.debug("%s：%r, %r",name, value, type(value))
+        summary_writer = tf.summary.create_file_writer(logdir=self.log_dir)
+        with summary_writer.as_default():
             tf.summary.scalar(name, value, step=step)
+        summary_writer.close()
 
-    def image(self, images, name):
-        with self.summaryWriter.as_default():
-            images = np.transpose(images, (0, 2, 3, 1))  # [B,C,H,W]=>[B,H,W,C], tf2.x的image通道顺序
-            r = tf.summary.image(name, images, 0)  # step=0, 只保留当前批次就可以
-            if r:
-                logger.info("保存图保存到tensorboad: %r", images.shape)
-            else:
-                logger.info("保存图保存到tensorboad失败: %r", images.shape)
+    def image(self, images, name, step=0):
+        """
+        :param images: `[b, h, w, c]`
+        """
+        if type(images) != np.ndarray:
+            raise ValueError("图像必须为numpy数组，当前图像为：" + str(type(images)))
+        if len(images.shape) == 3:
+            images = images[np.newaxis, :]
+        if len(images.shape) != 4:
+            raise ValueError("图像必须为[B,H,W,C]，当前图像为：" + str(images.shape))
+
+        summary_writer = tf.summary.create_file_writer(logdir=self.log_dir)
+        with summary_writer.as_default():
+            if images.shape[1] == 3:  # [B,C,H,W]
+                images = np.transpose(images, (0, 2, 3, 1))  # [B,C,H,W]=>[B,H,W,C], tf2.x的image通道顺序
+            r = tf.summary.image(name, images, step)
+        summary_writer.close()
+        if not r: logger.error("保存图片到tensorboard失败：%r", images.shape)
+        return r
 
     # 参考 https://github.com/amirhfarzaneh/lsoftmax-pytorch/blob/master/train_mnist.py
     def plot_2d_embedding(self, name, features, labels, step):
@@ -81,24 +90,10 @@ class TensorboardVisualizer(object):
         plt.close(figure)
         buf.seek(0)
 
-        # for tensorflow1.x，代码保留
-        # image = tf.Summary.Image(height=height, width=width, colorspace=channel, encoded_image_string=image_string)
-        # summary = tf.Summary(value=[tf.Summary.Value(tag=name, image=image)])
-        # writer = tf.summary.FileWriter(self.log_dir)
-        # writer.add_summary(summary, step)
-        # writer.close()
-
-        # for tensorflow2.x
-        with self.summaryWriter.as_default():
-            image = tf.image.decode_jpeg(buf.getvalue(), channels=3)
-            image = tf.expand_dims(image, 0)  # 加个批次
-            logger.info("保存Embedding图保存到tensorboard: %r", image.shape)
-            r = tf.summary.image(name, image, step=step)
-            if not r:
-                logger.error("保存Embedding图保存到tensorboard失败！%s",image.shape)
-            else:
-                logger.debug("embedding plot:%r", image)
-                logger.info("保存Embedding图保存到tensorboard: %r, step: %d", image.shape, step)
+        nparray = np.frombuffer(buf.getvalue(), dtype=np.uint8)
+        image = cv2.imdecode(nparray,1)
+        if not self.image(image, name, step):
+            logger.error("保存Embeding Plot到tensorboad失败：%r", image.shape)
 
     # https://www.cnblogs.com/cloud-ken/p/9329703.html
     # 生成可视化最终输出层向量所需要的日志文件
