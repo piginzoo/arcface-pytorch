@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import visdom
-from PIL import Image
 from tensorboard.plugins import projector
 
 import utils
@@ -23,28 +22,6 @@ matplotlib.rcParams['axes.unicode_minus'] = False  # 正常显示负号
 matplotlib.rcParams['axes.unicode_minus'] = False  # 解决负号'-'显示为方块的问题
 
 logger = logging.getLogger(__name__)
-
-
-class Visualizer(object):
-    """
-    使用visdom可视化，visdom是PyTorch的远程可视化神器：https://zhuanlan.zhihu.com/p/34692106
-    我自己的评价，visdom不好用,原因：
-    1、不支持提前写入，然后像tensorboard那样，后起一个服务器来读取
-    2、创建Visdom实例的时候，自动连接，而且还报错，无法catch住，很恼人，逼的我都先做个端口check才可以
-    3、图形方面，没体验，待评价...
-    """
-
-    def __init__(self, config):
-        if config.visualizer == "tensorboard":
-            self.visualizer = TensorboardVisualizer(config.tensorboard_dir)
-            return
-        if config.visualizer == "visdom":
-            self.visualizer = VisdomVisualizer('arcface', config.visdom_port)
-            return
-        raise ValueError("无法识别的Visualizer类型：" + config.visualizer)
-
-    def text(self, step, value, name):
-        self.visualizer.write(step, value, name)
 
 
 class TensorboardVisualizer(object):
@@ -69,8 +46,11 @@ class TensorboardVisualizer(object):
     def image(self, images, name):
         with self.summaryWriter.as_default():
             images = np.transpose(images, (0, 2, 3, 1))  # [B,C,H,W]=>[B,H,W,C], tf2.x的image通道顺序
-            tf.summary.image(name, images, 0)  # step=0, 只保留当前批次就可以
-            logger.info("保存图保存到tensorboad: %r", images.shape)
+            r = tf.summary.image(name, images, 0)  # step=0, 只保留当前批次就可以
+            if r:
+                logger.info("保存图保存到tensorboad: %r", images.shape)
+            else:
+                logger.info("保存图保存到tensorboad失败: %r", images.shape)
 
     # 参考 https://github.com/amirhfarzaneh/lsoftmax-pytorch/blob/master/train_mnist.py
     def plot_2d_embedding(self, name, features, labels, step):
@@ -93,7 +73,7 @@ class TensorboardVisualizer(object):
             mask = (label == labels)
             label_features = features[mask]
 
-            plt.scatter(label_features[:, 0], label_features[:, 1]) # 我靠，只显示前2维，高维也只是前2维
+            plt.scatter(label_features[:, 0], label_features[:, 1])  # 我靠，只显示前2维，高维也只是前2维
 
         # plt.show()
         buf = io.BytesIO()
@@ -111,13 +91,13 @@ class TensorboardVisualizer(object):
         # for tensorflow2.x
         with self.summaryWriter.as_default():
             image = tf.image.decode_jpeg(buf.getvalue(), channels=3)
-            image = tf.expand_dims(image, 0) # 加个批次
+            image = tf.expand_dims(image, 0)  # 加个批次
             r = tf.summary.image(name, image, step=step)
             if not r:
-                logger.error("保存Embeding图保存到tensorboad失败！")
+                logger.error("保存Embedding图保存到tensorboard失败！")
             else:
                 logger.debug("embedding plot:%r", image)
-                logger.info("保存Embeding图保存到tensorboad: %r, step: %d", image.shape,step)
+                logger.info("保存Embedding图保存到tensorboard: %r, step: %d", image.shape, step)
 
     # https://www.cnblogs.com/cloud-ken/p/9329703.html
     # 生成可视化最终输出层向量所需要的日志文件
