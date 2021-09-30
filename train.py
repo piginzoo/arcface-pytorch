@@ -88,7 +88,7 @@ def main(args):
         for step_of_epoch, data in enumerate(trainloader):
 
             total_steps = total_steps + 1
-            if step_of_epoch > 10: break
+
 
             try:
                 # 准备batch数据/标签
