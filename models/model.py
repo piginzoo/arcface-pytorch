@@ -54,7 +54,7 @@ class Net(nn.Module):
             self.extract_layer = nn.Sequential(
                 nn.Linear(kernel_size * kernel_size * 512, 2),  # 163万个参数/resnet18是1100万个参数
                 nn.BatchNorm1d(2))
-            self.metric_fc = ArcMarginProduct(64,
+            self.metric_fc = ArcMarginProduct(2,
                                               num_classes,
                                               s=30,
                                               m=0.5,
