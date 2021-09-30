@@ -92,9 +92,10 @@ class TensorboardVisualizer(object):
         with self.summaryWriter.as_default():
             image = tf.image.decode_jpeg(buf.getvalue(), channels=3)
             image = tf.expand_dims(image, 0)  # 加个批次
+            logger.info("保存Embedding图保存到tensorboard: %r", image.shape)
             r = tf.summary.image(name, image, step=step)
             if not r:
-                logger.error("保存Embedding图保存到tensorboard失败！")
+                logger.error("保存Embedding图保存到tensorboard失败！%s",image.shape)
             else:
                 logger.debug("embedding plot:%r", image)
                 logger.info("保存Embedding图保存到tensorboard: %r, step: %d", image.shape, step)
