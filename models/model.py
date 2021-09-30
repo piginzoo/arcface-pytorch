@@ -45,12 +45,10 @@ class Net(nn.Module):
         if type == "mnist":
             self.extract_layer = nn.Sequential(
                 nn.Linear(kernel_size * kernel_size * 512, 2),  # 163万个参数/resnet18是1100万个参数
-                nn.BatchNorm1d(2),
-                nn.ReLU())
+                nn.BatchNorm1d(2))
             self.metric_fc = nn.Sequential(
                 nn.Linear(2, num_classes),
-                nn.BatchNorm1d(num_classes),
-                nn.ReLU())
+                nn.BatchNorm1d(num_classes))
             logger.info("构建可视化用模型（输出2维）")
         else:
             self.extract_layer = nn.Identity()
