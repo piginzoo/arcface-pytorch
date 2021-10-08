@@ -24,7 +24,7 @@ class ArcMarginProduct(nn.Module):
         self.out_features = out_features  # 这个就是人脸分类，1万多，就是不同人
         self.s = s
         self.m = m
-        self.weight = Parameter(torch.FloatTensor(out_features, in_features)) # 512x10000(人脸分类) = 512万个参数
+        self.weight = Parameter(torch.FloatTensor(out_features, in_features))  # 512x10000(人脸分类) = 512万个参数
         nn.init.xavier_uniform_(self.weight)  # 初始化
 
         self.easy_margin = easy_margin
@@ -51,7 +51,7 @@ class ArcMarginProduct(nn.Module):
         这个module得到了啥？得到了一个可以做softmax的时候，归一化的余弦最大化的向量
         """
 
-        logger.debug("[网络输出]arcface的loss的输入x：%r, label: %r", input.shape,label)
+        # logger.debug("[网络输出]arcface的loss的输入x：%r, label: %r", input.shape,label)
         # --------------------------- cos(θ) & phi(θ) ---------------------------
         """
         >>> F.normalize(torch.Tensor([[1,1],
@@ -76,7 +76,8 @@ class ArcMarginProduct(nn.Module):
         # logger.debug("[网络输出]cos：%r", cosine.shape)
 
         # clamp，min~max间，都夹到范围内 : https://blog.csdn.net/weixin_40522801/article/details/107904282
-        sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(0,1))
+        # https://github.com/ronghuaiyang/arcface-pytorch/issues/91 避免nan
+        sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(1e-6, 1))
         # logger.debug("[网络输出]sin：%r", sine.shape)
 
         # 和差化积，cos(θ + m) = cos(θ) * cos(m) - sin(θ) * sin(m)

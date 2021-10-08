@@ -55,7 +55,7 @@ class Net(nn.Module):
             resnet_model = models.resnet18(pretrained=True)
             self.resnet_layer = nn.Sequential(*list(resnet_model.children())[:-2])
             self.extract_layer = nn.Sequential(
-                nn.Linear(kernel_size * kernel_size * 512, 2),  # 163万个参数/resnet18是1100万个参数
+                nn.Linear(kernel_size * kernel_size * 512, 2),  # 5x5x512=25.6万个参数/resnet18是1100万个参数
                 nn.BatchNorm1d(2))
             self.metric_fc = ArcMarginProduct(2,
                                               num_classes,
@@ -107,3 +107,8 @@ class Net(nn.Module):
         x = x.view(-1, self.__num_flat_features(x))  # flat it
         features = self.extract_layer(x)
         return features
+
+    def predict(self, x):
+        features = self.extract_feature(x)
+        x = self.metric_fc(features)
+        return x

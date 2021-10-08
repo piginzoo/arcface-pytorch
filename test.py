@@ -64,7 +64,7 @@ class MnistTester(Tester):
 
             # 预测
             with torch.no_grad():
-                output, features = model(imgs_of_batch)
+                output, features = model.predict(imgs_of_batch)
 
                 # 本来还想要再经过一下arcface的metrics，也就是论文的那个s*cos(θ+m)，
                 # 但是，突然反思了一下，觉得不对，因为那个是需要同时传入label，我靠，我用网络就是为了argmax得到label，你让我传给你label，什么鬼？
@@ -92,7 +92,7 @@ class MnistTester(Tester):
             data = data.to(self.device)  # 放到显存中，用于加速
             # you don't need to calculate gradients for forward and backward phase.防止OOM
             with torch.no_grad():
-                _, __features = model(x=data)
+                __features = model.extract_feature(data)
                 __features = __features.cpu()  # 用cpu()值替换掉原引用，导致旧引用回收=>GPU内存回收，解决OOM问题
 
             if features is None:
