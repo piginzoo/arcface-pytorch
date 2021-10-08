@@ -91,7 +91,7 @@ class ArcMarginProduct(nn.Module):
             cos_θ_m = torch.where(cosine > self.th, cos_θ_m, cosine - self.mm)
 
         # --------------------------- convert label to one-hot ---------------------------
-        one_hot = torch.zeros(cosine.size(), device=self.device)
+        one_hot = torch.zeros(cosine.size())#, device=self.device)
         # logger.debug("[网络输出]one_hot：%r", one_hot.shape)
 
         # input.scatter_(dim, index, src)：从【src源数据】中获取的数据，按照【dim指定的维度】和【index指定的位置】，替换input中的数据。

@@ -7,7 +7,7 @@ if [ "$1" == "stop" ]; then
 fi
 
 if [ "$2" == "" ]; then
-    echo "格式：bin/train.docker <GPU:0|1> <local|term|debug|prod>"
+    echo "格式：bin/train.docker <GPU:0|1> <local|term|debug|mnist.ce|mnist.arcface|face>"
     exit
 fi
 
@@ -26,23 +26,13 @@ if [ "$2" == "local" ]; then
     GPU_OPT=""
     CMD="bin/train.sh debug"
     PROXY=""
-elif [ "$2" == "debug" ]; then
-    echo "服务器上的Debug模式，只跑很少的epochs ..."
-    CMD="bin/train.sh debug"
-elif [ "$2" == "mnist" ]; then
-    echo "服务器上的Visualize模式，使用MNIST数据，跑可视化效果"
-    CMD="bin/train.sh mnist"
-    DAEMON="-d"
 elif [ "$2" == "term" ]; then
     echo "服务器上的Debug模式，只跑很少的epochs ..."
     CMD="/bin/bash"
-elif [ "$2" == "prod" ]; then
-    echo "服务器上的生产模式，真正的训练 ..."
-    CMD="bin/train.sh prod"
-    DAEMON="-d"
 else
-    echo "无法识别的模式：$2，退出！"
-    exit
+    echo "启动训练，模式：$2"
+    CMD="bin/train.sh $2"
+    DAEMON="-d"
 fi
 
 FULL_CMD="

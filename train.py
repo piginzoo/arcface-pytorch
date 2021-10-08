@@ -71,9 +71,6 @@ def main(args):
 
     early_stopper = EarlyStop(opt.early_stop)
 
-    # 为了打印网络结构，需要传入一个input的shape
-    summary(model, opt.input_shape)
-
     # 其他准备
     visualizer = TensorboardVisualizer(opt.tensorboard_dir)
     min_loss = 999999
@@ -101,7 +98,7 @@ def main(args):
                 label = label.to(device).long()
 
                 # 使用Resnet抽取特征
-                output, _ = model(images)
+                output, _ = model(images,label)
 
                 # 求loss
                 loss = criterion(output, label)
