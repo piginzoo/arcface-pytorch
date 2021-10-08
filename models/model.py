@@ -32,44 +32,28 @@ class Net(nn.Module):
         size = config.input_shape[-1]
         kernel_size = size // 32  # resnet最后都是缩小32倍，无论resnet18还是resnet50
 
-        if type.startswith("mnist"):
-            logger.info("使用预训练的模型Resnet18")
-            resnet_model = models.resnet18(pretrained=True)
-            num_classes = 10
-            self.extract_layer = nn.Sequential(
-                nn.Linear(kernel_size * kernel_size * 512, 2),  # 163万个参数/resnet18是1100万个参数
-                nn.BatchNorm1d(2))
-            self.metric_fc = nn.Sequential(
-                nn.Linear(2, num_classes),
-                nn.BatchNorm1d(num_classes))
-            logger.info("构建验证MNIST数据集的交叉熵模型")
-        else:
-            logger.info("使用预训练的模型Resnet50")
-            num_classes = config.num_classes
-            resnet_model = models.resnet50(pretrained=True)
-
-        # 取掉model的后两层：全局平均池化 和 FC
-        self.resnet_layer = nn.Sequential(*list(resnet_model.children())[:-2])
-
-        size = config.input_shape[-1]
-        kernel_size = size // 32  # resnet最后都是缩小32倍，无论resnet18还是resnet50
-
         self.process_label = True
 
         # mnist+啥都不干的交叉熵，把7x7x512，拉平后，降维成2维度（2维度是为了显示embedding到plot用）
         if type == "mnist.ce":
+            num_classes = 10
+            resnet_model = models.resnet18(pretrained=True)
+            self.resnet_layer = nn.Sequential(*list(resnet_model.children())[:-2])
             self.extract_layer = nn.Sequential(
-                nn.Linear(kernel_size * kernel_size * 512, 2),  # 163万个参数/resnet18是1100万个参数
+                nn.Linear(kernel_size * kernel_size * 512, 2),  # 5x5x512=25.6万个参数/resnet18是1100万个参数
                 nn.BatchNorm1d(2))
             self.metric_fc = nn.Sequential(
                 nn.Linear(2, num_classes),
                 nn.BatchNorm1d(num_classes))
             logger.info("构建验证MNIST数据集的交叉熵模型")
-            self.process_label = False
+            self.process_label = False  # 如果不是arcface，不需要处理label
             return
 
         # mnist+arcface，把7x7x512，拉平后，降维成2维度（2维度是为了显示embedding到plot用）
         if type == "mnist.arcface":
+            num_classes = 10
+            resnet_model = models.resnet18(pretrained=True)
+            self.resnet_layer = nn.Sequential(*list(resnet_model.children())[:-2])
             self.extract_layer = nn.Sequential(
                 nn.Linear(kernel_size * kernel_size * 512, 2),  # 163万个参数/resnet18是1100万个参数
                 nn.BatchNorm1d(2))
@@ -83,11 +67,11 @@ class Net(nn.Module):
             return
 
         if type == "face":
-            # 做一个什么都不干的层，只是当个占位符，Identity正好可以干这事
-            self.extract_layer = nn.Identity()
-
-            # arcface里面包含了weight，类上面的Linear的weight
-            self.metric_fc = ArcMarginProduct(512,
+            num_classes = config.num_classes
+            resnet_model = models.resnet50(pretrained=True)
+            self.resnet_layer = nn.Sequential(*list(resnet_model.children())[:-2])
+            self.extract_layer = nn.Identity()  # 做一个什么都不干的层，只是当个占位符，Identity正好可以干这事
+            self.metric_fc = ArcMarginProduct(512,  # arcface里面包含了weight，类上面的Linear的weight
                                               num_classes,
                                               s=30,
                                               m=0.5,
@@ -105,15 +89,21 @@ class Net(nn.Module):
             num_features *= s
         return num_features
 
-    def forward(self, x, label=None):
+    def forward(self, x, label):
         x = self.resnet_layer(x)
         x = x.view(-1, self.__num_flat_features(x))  # flat it
 
         # 如果self.extract_2dim_layer is not none， call it
         features = self.extract_layer(x)
 
-        if self.process_label and label:
+        if self.process_label:
             x = self.metric_fc(features, label)
         else:
             x = self.metric_fc(features)
         return x, features
+
+    def extract_feature(self, x):
+        x = self.resnet_layer(x)
+        x = x.view(-1, self.__num_flat_features(x))  # flat it
+        features = self.extract_layer(x)
+        return features

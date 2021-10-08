@@ -171,8 +171,8 @@ def main(args):
         total_steps = (epoch + 1) * len(trainloader)
         visualizer.text(total_steps, acc, name='test_acc')
 
-        if args.mode == "mnist":
-            features_2d, labels = tester.calculate_features(model, opt)
+        if args.mode.startswith("mnist"):
+            features_2d, labels = tester.calculate_features(model, opt.lfw_test_pair_path)
             logger.debug("计算完的 [%d] 个人脸features", len(features_2d))
 
             # 做一个归一化操作

@@ -25,7 +25,7 @@ def get_tester(type, opt, device):
     # 准备数据，如果mode是"mnist"，使用MNIST数据集
     # 可视化，其实就是使用MNIST数据集，训练一个2维向量
     # mnist数据，用于可视化的测试
-    if type == "mnist":
+    if type.startswith("mnist"):
         tester = MnistTester(opt, device)
     else:
         tester = FaceTester()
@@ -123,8 +123,8 @@ class FaceTester(Tester):
             data = torch.from_numpy(data)
             # logger.debug("推断要求输入：%r", list(model.parameters())[0].shape)
             logger.debug("推断实际输入：%r", data.shape)
-            feature = model(data)[0]
-            feature = feature.cpu().numpy()
+            feature = model.extract_feature(data)[0] # None是个占位符
+            feature = feature.cpu().detach().numpy() # detach,去掉梯度.
 
             logger.debug("推断实际输出：%r", feature.shape)
             logger.debug("推断实际输出：%r", feature)
