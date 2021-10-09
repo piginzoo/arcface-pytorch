@@ -35,7 +35,6 @@ class ArcMarginProduct(nn.Module):
         self.device = device
 
     def cosθ(self,x):
-        import pdb;pdb.set_trace()
         cosines = F.linear(F.normalize(x), F.normalize(self.weight))  # |x| * |w|
         return cosines
 

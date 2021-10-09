@@ -19,6 +19,5 @@ else
     CUDA_VISIBLE_DEVICES=0 \
       python train.py \
       --name arcface \
-      --mode $1
-      #>logs/console.log 2>&1
+      --mode $1>logs/console.log 2>&1
 fi
