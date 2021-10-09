@@ -76,7 +76,7 @@ class ArcMarginProduct(nn.Module):
         
         normalize, 是x/x的二范数，啥是二范数来着？就是sqrt(x1^2+x2^2+...+xn^2)
         """
-        cosine = F.linear(F.normalize(input), F.normalize(self.weight))  # |x| * |w|
+        cosine = self.cosθ(input)
         # logger.debug("[网络输出]cos：%r", cosine.shape)
 
         # clamp，min~max间，都夹到范围内 : https://blog.csdn.net/weixin_40522801/article/details/107904282
@@ -117,6 +117,7 @@ class ArcMarginProduct(nn.Module):
         # 我们就是在准备这个放大器的输入的那个向量，是10178维度的，[cosθ_0,cosθ_1,...,cos(θ_{i-1}),cos(θ_i+m),cos(θ_{i+1}),...]
         #                                           只有这项是特殊的,θ_i多加了m，其他都没有---> ~~~~~~~~~~
         # 不是概率，概率是softmax之后才是概率
+        # 输出的是一堆的cos值，是我的脸，和每一个类别中心（就是W）的cos距离
         return output
 
 
