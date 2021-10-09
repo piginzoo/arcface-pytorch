@@ -87,7 +87,6 @@ def main(args):
 
             total_steps = total_steps + 1
 
-            if total_steps>1: break
             try:
                 # 准备batch数据/标签
                 images, label = data
