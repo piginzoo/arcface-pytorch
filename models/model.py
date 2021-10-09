@@ -22,7 +22,7 @@ class Net(nn.Module):
     512---|
           \10000分类   <-- faces
 
-    1. 特征抽取层
+    参数量（人脸）：resnet50（2345万）+
 
     """
 
@@ -70,10 +70,15 @@ class Net(nn.Module):
             num_classes = config.num_classes
             resnet_model = models.resnet50(pretrained=True)
             self.resnet_layer = nn.Sequential(*list(resnet_model.children())[:-2])
-            self.extract_layer = nn.Identity()  # 做一个什么都不干的层，只是当个占位符，Identity正好可以干这事
-            self.metric_fc = ArcMarginProduct(kernel_size * kernel_size * 2048,  # arcface里面包含了weight，类上面的Linear的weight
-                                              num_classes,                       # 2048是因为resnet50输出是2048通道，resnet18是512
-                                              s=30,
+
+            # self.extract_layer = nn.Identity()  # 做一个什么都不干的层，只是当个占位符，Identity正好可以干这事
+            self.extract_layer = nn.Sequential(
+                nn.Linear(kernel_size * kernel_size * 2048, config.embedding_size),
+                nn.BatchNorm1d(config.embedding_size))
+
+            self.metric_fc = ArcMarginProduct(config.embedding_size,  # arcface里面包含了weight，类上面的Linear的weight
+                                              num_classes,  # 2048是因为resnet50输出是2048通道，resnet18是512
+                                              s=30,  # 参数量是2200万+
                                               m=0.5,
                                               easy_margin=config.easy_margin,
                                               device=device)

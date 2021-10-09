@@ -6,6 +6,7 @@ class Config(object):
     backbone = 'resnet18'
     classify = 'softmax'
     num_classes = 10177 + 1  # webface数据集10575,celeba数据集10177个分类, class+1, 防止越界
+    embedding_size = 128 # 表示人脸的维度
     metric = 'arc_margin'
     easy_margin = False
     use_se = False
