@@ -66,7 +66,6 @@ class MnistTester(Tester):
 
             # 预测
             with torch.no_grad():
-                import pdb; pdb.set_trace()
                 output = model.predict(imgs_of_batch)
 
                 # 本来还想要再经过一下arcface的metrics，也就是论文的那个s*cos(θ+m)，
