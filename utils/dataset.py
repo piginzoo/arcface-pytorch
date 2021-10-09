@@ -84,10 +84,10 @@ class Dataset(data.Dataset):
     def __getitem__(self, index):
         img_path, label = self.imgs[index]  # 这里面是图片路径
         image = Image.open(img_path)
-        logger.debug("加载图片：%s", img_path)
+        # logger.debug("加载图片：%s", img_path)
         image = self.transforms(image)
         label = np.int32(label)
-        logger.debug("训练数据：%r", image.shape)
+        # logger.debug("训练数据：%r", image.shape)
         return image.float(), label
 
     def __len__(self):

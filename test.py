@@ -59,7 +59,6 @@ class MnistTester(Tester):
         correct = 0
         start = time.time()
         for index, data in enumerate(self.data_loader):
-
             imgs_of_batch, label = data
             # bugfix:...found at least two devices, cuda:0 and cpu!
             imgs_of_batch, label = imgs_of_batch.to(self.device), label.to(self.device)
@@ -121,12 +120,15 @@ class FaceTester(Tester):
             image = utils.load_image(image_path)
             if image is None: continue
 
+            # 转成 cuda tensor
             data = np.array([image])
             data = torch.from_numpy(data)
+            data = data.to(self.device)
+
             # logger.debug("推断要求输入：%r", list(model.parameters())[0].shape)
             logger.debug("推断实际输入：%r", data.shape)
-            feature = model.extract_feature(data)[0] # None是个占位符
-            feature = feature.cpu().detach().numpy() # detach,去掉梯度.
+            feature = model.extract_feature(data)[0]
+            feature = feature.cpu().detach().numpy()  # cpu(显存=>内存)，detach(去掉梯度), numpy(tensor转成numpy)
 
             logger.debug("推断实际输出：%r", feature.shape)
             logger.debug("推断实际输出：%r", feature)
