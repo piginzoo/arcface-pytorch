@@ -36,7 +36,7 @@ class ArcMarginProduct(nn.Module):
 
     def cosθ(self,x):
         cosines = F.linear(F.normalize(x), F.normalize(self.weight))  # |x| * |w|
-        return torch.argmin(cosines)
+        return cosines
 
     def forward(self, input, label):
         """
