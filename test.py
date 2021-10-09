@@ -30,7 +30,7 @@ def get_tester(type, opt, device):
         tester = MnistTester(opt, device)
     else:
         logger.info("构建人脸测试类")
-        tester = FaceTester()
+        tester = FaceTester(device)
     return tester
 
 
@@ -108,6 +108,9 @@ class MnistTester(Tester):
 
 
 class FaceTester(Tester):
+
+    def __init__(self, device):
+        self.device = device
 
     def calculate_features(self, model, image_paths):
         """
