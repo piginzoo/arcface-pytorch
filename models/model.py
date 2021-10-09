@@ -32,7 +32,7 @@ class Net(nn.Module):
         size = config.input_shape[-1]
         kernel_size = size // 32  # resnet最后都是缩小32倍，无论resnet18还是resnet50
 
-        self.process_label = True
+        self.is_arcface_metrics = True
 
         # mnist+啥都不干的交叉熵，把7x7x512，拉平后，降维成2维度（2维度是为了显示embedding到plot用）
         if type == "mnist.ce":
@@ -46,7 +46,7 @@ class Net(nn.Module):
                 nn.Linear(2, num_classes),
                 nn.BatchNorm1d(num_classes))
             logger.info("构建验证MNIST数据集的交叉熵模型")
-            self.process_label = False  # 如果不是arcface，不需要处理label
+            self.is_arcface_metrics = False  # 如果不是arcface，不需要处理label
             return
 
         # mnist+arcface，把7x7x512，拉平后，降维成2维度（2维度是为了显示embedding到plot用）
@@ -110,5 +110,9 @@ class Net(nn.Module):
 
     def predict(self, x):
         features = self.extract_feature(x)
-        x = self.metric_fc(features)
+
+        if self.is_arcface_metrics:
+            x = self.metric_fc.cosθ(features)
+        else:
+            x = self.metric_fc(features)
         return x

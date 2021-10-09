@@ -34,10 +34,14 @@ class ArcMarginProduct(nn.Module):
         self.mm = math.sin(math.pi - m) * m
         self.device = device
 
+    def cosθ(self,x):
+        cosines = F.linear(F.normalize(x), F.normalize(self.weight))  # |x| * |w|
+        return torch.argmin(cosines)
+
     def forward(self, input, label):
         """
         @param input: 512维向量
-        @param label:
+        @param label: 为何要穿label？！是因为，需要告诉模型，你需要挑哪一个W_i，来去计算夹角最小。
 
         其实就是在实现 softmax中的子项 exp( s * cos(θ + m) )，
         但是因为cos里面是个和：θ + m
@@ -83,7 +87,7 @@ class ArcMarginProduct(nn.Module):
         # 和差化积，cos(θ + m) = cos(θ) * cos(m) - sin(θ) * sin(m)
         cos_θ_m = cosine * self.cos_m - sine * self.sin_m
 
-        logger.debug("[网络输出]cos_θ_m：%r", cos_θ_m.shape)
+        # logger.debug("[网络输出]cos_θ_m：%r", cos_θ_m.shape)
         if self.easy_margin:
             cos_θ_m = torch.where(cosine > 0, cos_θ_m, cosine)
         else:
