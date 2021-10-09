@@ -96,7 +96,7 @@ class Net(nn.Module):
         # 如果self.extract_2dim_layer is not none， call it
         features = self.extract_layer(x)
 
-        if self.process_label:
+        if self.is_arcface_metrics:
             x = self.metric_fc(features, label)
         else:
             x = self.metric_fc(features)
