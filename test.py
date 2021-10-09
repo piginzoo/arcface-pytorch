@@ -26,8 +26,10 @@ def get_tester(type, opt, device):
     # 可视化，其实就是使用MNIST数据集，训练一个2维向量
     # mnist数据，用于可视化的测试
     if type.startswith("mnist"):
+        logger.info("构建Mnist测试类")
         tester = MnistTester(opt, device)
     else:
+        logger.info("构建人脸测试类")
         tester = FaceTester()
     return tester
 
@@ -64,7 +66,8 @@ class MnistTester(Tester):
 
             # 预测
             with torch.no_grad():
-                output, features = model.predict(imgs_of_batch)
+                import pdb; pdb.set_trace()
+                output = model.predict(imgs_of_batch)
 
                 # 本来还想要再经过一下arcface的metrics，也就是论文的那个s*cos(θ+m)，
                 # 但是，突然反思了一下，觉得不对，因为那个是需要同时传入label，我靠，我用网络就是为了argmax得到label，你让我传给你label，什么鬼？
