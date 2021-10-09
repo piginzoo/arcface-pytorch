@@ -18,6 +18,8 @@ build出来我们自己的训练容器：[arcface.img:v1]。
 - 改造了Visualizer，方便与容器外的visdom服务器通讯
 - 还增加了tensorboard的支持，作为visdom的备份（visdom不好用）
 - 改造了数据集加载，配合使用下面说的数据集加载
+- 为了对比验证，增加了Mnist数据集的测试，分别测试一般的全连接，和arcface的约束
+- 增加了mnist的可视化plot，画了一个二维的环形图，用于和论文的效果做对比
 
 # 数据
 

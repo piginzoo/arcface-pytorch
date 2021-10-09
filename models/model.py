@@ -71,8 +71,8 @@ class Net(nn.Module):
             resnet_model = models.resnet50(pretrained=True)
             self.resnet_layer = nn.Sequential(*list(resnet_model.children())[:-2])
             self.extract_layer = nn.Identity()  # 做一个什么都不干的层，只是当个占位符，Identity正好可以干这事
-            self.metric_fc = ArcMarginProduct(kernel_size * kernel_size * 512,  # arcface里面包含了weight，类上面的Linear的weight
-                                              num_classes,
+            self.metric_fc = ArcMarginProduct(kernel_size * kernel_size * 2048,  # arcface里面包含了weight，类上面的Linear的weight
+                                              num_classes,                       # 2048是因为resnet50输出是2048通道，resnet18是512
                                               s=30,
                                               m=0.5,
                                               easy_margin=config.easy_margin,
