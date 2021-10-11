@@ -18,7 +18,7 @@ class ArcMarginProduct(nn.Module):
             m: margin 是一个角度的margin，你可以理解是一段弧长
     """
 
-    def __init__(self, in_features, out_features, s=30.0, m=0.50, easy_margin=False, device='cuda'):
+    def __init__(self, in_features, out_features, s=64.0, m=3.5, easy_margin=False, device='cuda'):
         super(ArcMarginProduct, self).__init__()
         self.in_features = in_features  # 入参是人脸向量，512，定死了
         self.out_features = out_features  # 这个就是人脸分类，1万多，就是不同人
@@ -81,6 +81,7 @@ class ArcMarginProduct(nn.Module):
 
         # clamp，min~max间，都夹到范围内 : https://blog.csdn.net/weixin_40522801/article/details/107904282
         # https://github.com/ronghuaiyang/arcface-pytorch/issues/91 避免nan
+        # clamp(夹住)，不能为0，sin要做分母的；另外，最大也就1，太大了容易梯度爆炸
         sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(1e-6, 1))
         # logger.debug("[网络输出]sin：%r", sine.shape)
 
@@ -93,6 +94,8 @@ class ArcMarginProduct(nn.Module):
         else:
             # th = cos(π - m) ，mm = sin(π - m) * m
             # ？？？为何要做这个？？？
+            # 答: https://github.com/siriusdemon/Build-Your-Own-Face-Model/blob/master/recognition/blog/metric.md
+            # ArcFace 的越界发生在：原来的角度加上额外的角度超过180度的时候。上面的代码第3、4行说的是，如果越界发生了，就使用 CosFace 代替 ArcFace
             cos_θ_m = torch.where(cosine > self.th, cos_θ_m, cosine - self.mm)
 
         # --------------------------- convert label to one-hot ---------------------------

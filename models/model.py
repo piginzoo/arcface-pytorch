@@ -69,18 +69,23 @@ class Net(nn.Module):
         if type == "face":
             num_classes = config.num_classes
             resnet_model = models.resnet50(pretrained=True)
-            self.resnet_layer = nn.Sequential(*list(resnet_model.children())[:-2])
+            self.resnet_layer = nn.Sequential(*list(resnet_model.children())[:-1])  # 只去掉1层，保持2048的全局池化层avg层
 
-            # self.extract_layer = nn.Identity()  # 做一个什么都不干的层，只是当个占位符，Identity正好可以干这事
+            # 全连接参数：3100万，但是不收敛，保留代码，切换成avg，降低参数量
+            # self.resnet_layer = nn.Sequential(*list(resnet_model.children())[:-2])
+            # self.extract_layer = nn.Sequential(
+            #     nn.Linear(kernel_size * kernel_size * 2048, config.embedding_size),
+            #     nn.BatchNorm1d(config.embedding_size))
+
             self.extract_layer = nn.Sequential(
-                nn.Linear(kernel_size * kernel_size * 2048, config.embedding_size),
+                nn.Linear(2048, config.embedding_size),
                 nn.BatchNorm1d(config.embedding_size))
 
             self.metric_fc = ArcMarginProduct(config.embedding_size,  # arcface里面包含了weight，类上面的Linear的weight
                                               num_classes,  # 2048是因为resnet50输出是2048通道，resnet18是512
-                                              s=30,  # 参数量是2200万+
-                                              m=0.5,
-                                              easy_margin=config.easy_margin,
+                                              s=64,  # 参考旷视insightface的代码设置
+                                              m=1.2,  # 论文建议是m=1.2
+                                              easy_margin=True,
                                               device=device)
             logger.info("构建人脸的Arcface模型")
             return

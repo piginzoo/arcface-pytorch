@@ -32,7 +32,7 @@ class Config(object):
     test_pair_size = 300 # 测试300个正确对，150个同一人，150个不同人
     test_classes = 10 # 只测试10个人的脸，用来打印embeding的softmax情况
 
-    early_stop = 10 # 多少个epoch没提高，就退出
+    early_stop = 30 # 多少个epoch没提高，就退出
 
     # 对celeba数据集原图是178x218=>(170,170)，对lfw和webface原图是250x250=>(240,240)，
     # 原来程序给的128x128肯定是不合适的，会切丢的，他切是按照原尺寸和目标尺寸之间的间隙随机动，所以原图和目标size相差不能太大（参加RandomCrop源码）
