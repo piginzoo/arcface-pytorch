@@ -164,7 +164,8 @@ def main(args):
             save_model(opt, epoch, model, len(trainloader), latest_loss, acc)
 
         # early_stopper可以帮助存基于acc的best模型
-        if early_stopper.decide(acc, save_model, opt, epoch + 1, model, len(trainloader), latest_loss, acc):
+        # 2021.10.11 把acc改成了了-latest_loss
+        if early_stopper.decide(-latest_loss, save_model, opt, epoch + 1, model, len(trainloader), latest_loss, acc):
             logger.info("早停导致退出：epoch[%d] acc[%.4f]", epoch + 1, acc)
             break
 
