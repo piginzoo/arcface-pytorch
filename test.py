@@ -320,6 +320,6 @@ if __name__ == '__main__':
     opt = Config()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
     tester = FaceTester(device)
-    model = utils.load_model(args.model)
+    model = utils.load_model(args.model,device,opt)
     acc = tester.acc(model, opt)
     logger.info("测试acc：%r", acc)
