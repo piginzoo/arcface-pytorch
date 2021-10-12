@@ -86,4 +86,4 @@ def load_model(model_path,device,config):
     checkpoint = torch.load(model_path)
     model.load_state_dict(checkpoint)
     logger.info("加载模型：%s", model_path)
-    return model
+    return model.to(device)
