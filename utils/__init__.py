@@ -81,7 +81,9 @@ def load_image(image_path):
     return image
 
 
-def load_model(model_path):
-    model = torch.load(model_path,pickle_module=Net)
+def load_model(model_path,device,config):
+    model = Net("face",device,config)
+    checkpoint = torch.load(model_path)
+    model.load_state_dict(checkpoint)
     logger.info("加载模型：%s", model_path)
     return model
