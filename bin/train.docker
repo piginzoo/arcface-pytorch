@@ -31,10 +31,12 @@ elif [ "$2" == "term" ]; then
     CMD="/bin/bash"
 elif [ "$2" == "test" ]; then
     echo "服务器上的Test模式"
+    DEVICE=$1
     shift 2
-    CMD="CUDA_VISIBLE_DEVICES=0 python test.py $@"
+    CMD="CUDA_VISIBLE_DEVICES=$1 python test.py $@"
 else
     echo "启动训练，模式：$2"
+    DEVICE=$1
     CMD="bin/train.sh $2"
     DAEMON="-d"
 fi
@@ -42,7 +44,7 @@ fi
 FULL_CMD="
     docker run --rm
     -it $DAEMON $GPU_OPT
-    -e NVIDIA_VISIBLE_DEVICES=$1 $PROXY
+    -e NVIDIA_VISIBLE_DEVICES=$DEVICE $PROXY
     -v $PWD:/root/arcface
     -v $TRAIN_DIR:/root/arcface/data/train
     -v $VAL_DIR:/root/arcface/data/val

@@ -307,7 +307,7 @@ class FaceTester(Tester):
         logger.debug("过滤后，剩余%d个文件夹", len(sored_dir_files))
         return sored_dir_files
 
-# bin/train.docker test --model arcface_e39_s246948_202110121044_l0.51_a0.00.model
+# bin/train.docker 1 test --model arcface_e39_s246948_202110121044_l0.51_a0.00.model
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default=None, type=str)
