@@ -5,6 +5,7 @@ from logging import handlers
 import torch
 
 from config import Config
+from models import Net
 from utils.view_model import *
 from utils.visualizer import *
 
@@ -81,6 +82,6 @@ def load_image(image_path):
 
 
 def load_model(model_path):
-    model = torch.load(model_path)
+    model = torch.load(model_path,pickle_module=Net)
     logger.info("加载模型：%s", model_path)
     return model

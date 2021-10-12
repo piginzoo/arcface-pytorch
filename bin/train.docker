@@ -18,6 +18,7 @@ GPU_OPT="--runtime=nvidia"
 DAEMON=""
 PROXY=""
 PROXY="--env http_proxy=http://172.17.0.1:8123 --env https_proxy=http://172.17.0.1:8123 --env HTTP_PROXY=http://172.17.0.1:8123 --env HTTPS_PROXY=http://172.17.0.1:8123"
+DEVICE=$1
 
 if [ "$2" == "local" ]; then
     echo "本地（笔记本上，无显卡）调试模式 ..."
@@ -31,12 +32,10 @@ elif [ "$2" == "term" ]; then
     CMD="/bin/bash"
 elif [ "$2" == "test" ]; then
     echo "服务器上的Test模式"
-    DEVICE=$1
     shift 2
-    CMD="CUDA_VISIBLE_DEVICES=0 python test.py $@"
+    CMD="python test.py $@"
 else
     echo "启动训练，模式：$2"
-    DEVICE=$1
     CMD="bin/train.sh $2"
     DAEMON="-d"
 fi
