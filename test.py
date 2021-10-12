@@ -114,15 +114,16 @@ class FaceTester(Tester):
     def __init__(self, device):
         self.device = device
 
-    def calculate_features(self, model, image_paths):
+    def calculate_features(self, model, dir, face_image_names):
         """
         image_paths: 所有的图片的路径（全路径）
         """
-
         image_feature_dict = {}
-        for i, image_path in enumerate(image_paths):
-            name = os.path.split(image_path)[1]
-            image = utils.load_image(image_path)
+
+        # image_name 带着1层目录名
+        for i, image_name in enumerate(face_image_names):
+            image_full_path = os.path.join(dir,image_name)
+            image = utils.load_image(image_full_path)
             if image is None: continue
 
             # 转成 cuda tensor
@@ -135,10 +136,10 @@ class FaceTester(Tester):
             feature = model.extract_feature(data)[0]
             feature = feature.cpu().detach().numpy()  # cpu(显存=>内存)，detach(去掉梯度), numpy(tensor转成numpy)
 
-            # logger.debug("推断实际输出：%r", feature.shape)
+            logger.debug("推断实际输出(%s)：%r", image_name, feature.shape)
             # logger.debug("推断实际输出：%r", feature)
 
-            image_feature_dict[name] = feature
+            image_feature_dict[image_name] = feature
         return image_feature_dict
 
     def load_model(self, model, model_path):
@@ -218,12 +219,13 @@ class FaceTester(Tester):
         """
         model.eval()
 
+        # 加载所有的face1\face2\是否同一人
         face1_face2_label_list = self.load_test_pairs(opt.lfw_test_pair_path, opt.test_pair_size)
+        # 得到所有的人脸图片名字（包含1层目录）
         face_image_names = self.extract_face_images(face1_face2_label_list)
-        face_image_paths = [os.path.join(opt.lfw_root, each) for each in face_image_names]
 
         s = time.time()
-        image_feature_dicts = self.calculate_features(model, face_image_paths)
+        image_feature_dicts = self.calculate_features(model, face_image_names)
         # logger.debug("人脸的特征维度：%r", len(image_feature_dicts))
         t = time.time() - s
         logger.info('[验证]耗时: %.2f秒, 每张耗时：%.4f秒', t, t / len(image_feature_dicts))
