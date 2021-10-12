@@ -33,7 +33,7 @@ elif [ "$2" == "test" ]; then
     echo "服务器上的Test模式"
     DEVICE=$1
     shift 2
-    CMD="CUDA_VISIBLE_DEVICES=$1 python test.py $@"
+    CMD="CUDA_VISIBLE_DEVICES=$DEVICE python test.py $@"
 else
     echo "启动训练，模式：$2"
     DEVICE=$1
