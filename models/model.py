@@ -115,6 +115,7 @@ class Net(nn.Module):
     def extract_feature(self, x):
         x = self.resnet_layer(x)
         x = x.view(-1, self.__num_flat_features(x))  # flat it
+        logger.debug("resnet抽取完的特征：%r",x.shape)
         features = self.extract_layer(x)
         return features
 

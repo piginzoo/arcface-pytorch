@@ -131,7 +131,7 @@ class FaceTester(Tester):
             data = data.to(self.device)
 
             # logger.debug("推断要求输入：%r", list(model.parameters())[0].shape)
-            # logger.debug("推断实际输入：%r", data.shape)
+            logger.debug("推断实际输入：%r", data.shape)
             feature = model.extract_feature(data)[0]
             feature = feature.cpu().detach().numpy()  # cpu(显存=>内存)，detach(去掉梯度), numpy(tensor转成numpy)
 
@@ -216,6 +216,8 @@ class FaceTester(Tester):
         """
         重构后的测试入口，它去加载 形如 "xxx.jpg xxx.jpg 1"的lfw的测试文件，0/1表示是不是同一个人的脸，
         """
+        model.eval()
+
         face1_face2_label_list = self.load_test_pairs(opt.lfw_test_pair_path, opt.test_pair_size)
         face_image_names = self.extract_face_images(face1_face2_label_list)
         face_image_paths = [os.path.join(opt.lfw_root, each) for each in face_image_names]
