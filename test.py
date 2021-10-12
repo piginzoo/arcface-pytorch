@@ -131,7 +131,7 @@ class FaceTester(Tester):
             data = data.to(self.device)
 
             # logger.debug("推断要求输入：%r", list(model.parameters())[0].shape)
-            logger.debug("推断实际输入：%r", data.shape)
+            # logger.debug("推断实际输入：%r", data.shape)
             feature = model.extract_feature(data)[0]
             feature = feature.cpu().detach().numpy()  # cpu(显存=>内存)，detach(去掉梯度), numpy(tensor转成numpy)
 

@@ -29,7 +29,7 @@ class Config(object):
     lfw_test_pair_path = 'data/val/lfw_test_pair.txt'
     test_model_path = 'checkpoints/resnet18_110.pth'
     test_batch_size = 60
-    test_pair_size = 300 # 测试300个正确对，150个同一人，150个不同人
+    test_pair_size = 3000 # 测试300个正确对，150个同一人，150个不同人
     test_classes = 10 # 只测试10个人的脸，用来打印embeding的softmax情况
 
     early_stop = 30 # 多少个epoch没提高，就退出
