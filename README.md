@@ -2,7 +2,20 @@
 
 关于原理和代码，可以参考[我的博客](http://www.piginzoo.com/machine-learning/2021/09/15/face-recognition#arcface)。
 
-# 训练
+# 如何运行
+
+1、构建docker容器：`bin/build.sh`
+
+2、训练：
+   - 训练mnist数据集，纯softmax：`bin/train.docker 1 mnist.ce`, 1是显卡的序号，从0开始
+   - 训练mnist数据集，使用arcface：`bin/train.docker 1 mnist.arcface`
+   - 训练人脸数据集，使用arcface：`bin/train.docker 1 face`
+
+3、单独跑测试：`bin/train.docker 1 test`，这个集成到训练过程中了，也可以单独跑
+
+4、启动tensorboard：`bin/tboard.sh`，可以观察2维可视化、查看训练中的样本图像采样、查看loss/acc等指标
+
+# 关于训练
 
 我们使用了CeleBa的训练集（20万张），LFW的验证集（6000张）。
 
@@ -24,7 +37,9 @@ build出来我们自己的训练容器：[arcface.img:v1]。
 
 训练大概10个小时，1万个分类，train acc接近到1，test acc大概是82%，还和论文有一定差距，需要再优化。
 
-# 改进
+训练的详细过程，防止在[训练日志](doc/developing%20logs.docx)中，以供参考
+
+# Fork改进
 基于原有版本，我们做了如下改进：
 - 追加注释，对每行代码理解，与论文严格对应并注释
 - 构建了上述的训练docker容器，方便pytorch1.7-gpu版本的docker容器方式训练
@@ -35,7 +50,7 @@ build出来我们自己的训练容器：[arcface.img:v1]。
 - 为了对比验证，增加了Mnist数据集的测试，分别测试一般的全连接，和arcface的约束
 - 增加了mnist的可视化plot，画了一个二维的环形图，用于和论文的效果做对比
 
-# 数据
+# 相关数据
 
 旧代码用的训练集是Webface数据：[CASIA-webface](https://paperswithcode.com/dataset/casia-webface)做训练集，
 
