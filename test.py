@@ -225,7 +225,7 @@ class FaceTester(Tester):
         face_image_names = self.extract_face_images(face1_face2_label_list)
 
         s = time.time()
-        image_feature_dicts = self.calculate_features(model, face_image_names)
+        image_feature_dicts = self.calculate_features(model, opt.lfw_root, face_image_names)
         # logger.debug("人脸的特征维度：%r", len(image_feature_dicts))
         t = time.time() - s
         logger.info('[验证]耗时: %.2f秒, 每张耗时：%.4f秒', t, t / len(image_feature_dicts))
