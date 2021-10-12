@@ -179,8 +179,8 @@ class FaceTester(Tester):
             y_test = (y_score >= th)
             acc = np.mean((y_test == y_true).astype(int))
             if acc > best_acc:
-                logger.debug("更好的acc：%r > %r", acc, best_acc)
-                logger.debug("更好的阈值：%r", acc, best_th)
+                logger.debug("更好的acc：%r > %r(旧)", acc, best_acc)
+                logger.debug("更好的阈值：%r vs %r（旧）", th, best_th)
                 best_acc = acc
                 best_th = th
         logger.debug("最好的阈值: %r，最好的ACC：%r", best_th, best_acc)
