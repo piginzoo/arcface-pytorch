@@ -6,6 +6,7 @@ Created on 18-5-30 下午4:55
 """
 from __future__ import print_function
 
+import argparse
 import logging
 import os
 import random
@@ -16,6 +17,7 @@ import torch
 from torch.utils.data import DataLoader
 
 import utils
+from config import Config
 from utils.dataset import get_dataset
 
 logger = logging.getLogger(__name__)
@@ -176,8 +178,11 @@ class FaceTester(Tester):
             y_test = (y_score >= th)
             acc = np.mean((y_test == y_true).astype(int))
             if acc > best_acc:
+                logger.debug("更好的acc：%r > %r", acc, best_acc)
+                logger.debug("更好的阈值：%r", acc, best_th)
                 best_acc = acc
                 best_th = th
+        logger.debug("最好的阈值: %r，最好的ACC：%r", best_th, best_acc)
 
         return (best_acc, best_th)
 
@@ -301,3 +306,20 @@ class FaceTester(Tester):
         sored_dir_files = sored_dir_files[:3]
         logger.debug("过滤后，剩余%d个文件夹", len(sored_dir_files))
         return sored_dir_files
+
+# bin/train.docker test --model arcface_e39_s246948_202110121044_l0.51_a0.00.model
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", default=None, type=str)
+    args = parser.parse_args()
+
+    logger.info("参数配置：%r", args)
+
+    utils.init_log()
+
+    opt = Config()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # torch.device代表将torch.Tensor分配到的设备的对象
+    tester = FaceTester(device)
+    model = utils.load_model(args.model)
+    acc = tester.acc(model, opt)
+    logger.info("测试acc：%r", acc)

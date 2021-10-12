@@ -29,6 +29,10 @@ if [ "$2" == "local" ]; then
 elif [ "$2" == "term" ]; then
     echo "服务器上的Debug模式，只跑很少的epochs ..."
     CMD="/bin/bash"
+elif [ "$2" == "test" ]; then
+    echo "服务器上的Test模式"
+    shift 2
+    CMD="CUDA_VISIBLE_DEVICES=0 python test.py $@"
 else
     echo "启动训练，模式：$2"
     CMD="bin/train.sh $2"

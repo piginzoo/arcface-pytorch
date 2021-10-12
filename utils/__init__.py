@@ -2,8 +2,7 @@ import os.path as ops
 import socket
 from logging import handlers
 
-import cv2
-from PIL import Image
+import torch
 
 from config import Config
 from utils.view_model import *
@@ -75,7 +74,13 @@ def load_image(image_path):
     image /= 127.5
 
     image = np.transpose(image, (2, 0, 1))  # [H,W,3] => [3,W,H]
-    image = image[:,:,::-1] # BGR => RGB
+    image = image[:, :, ::-1]  # BGR => RGB
 
     # logger.debug("加载了图片: %s => %r", image_path, image.shape)
     return image
+
+
+def load_model(model_path):
+    model = torch.load(model_path)
+    logger.info("加载模型：%s", model_path)
+    return model
