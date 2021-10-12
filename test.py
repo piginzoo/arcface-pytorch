@@ -136,7 +136,7 @@ class FaceTester(Tester):
             feature = model.extract_feature(data)[0]
             feature = feature.cpu().detach().numpy()  # cpu(显存=>内存)，detach(去掉梯度), numpy(tensor转成numpy)
 
-            logger.debug("推断实际输出(%s)：%r", image_name, feature.shape)
+            # logger.debug("推断实际输出(%s)：%r", image_name, feature.shape)
             # logger.debug("推断实际输出：%r", feature)
 
             image_feature_dict[image_name] = feature
