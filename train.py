@@ -12,7 +12,7 @@ from torchsummary import summary
 
 import test
 from config.config import Config
-from models import Net
+from models import Net, FocalLoss
 from utils import dataset as data_loader
 from utils import init_log
 from utils.early_stop import EarlyStop
@@ -57,7 +57,8 @@ def main(args):
 
     # 准备神经网络
     logger.info("训练使用:%r", device)
-    criterion = torch.nn.CrossEntropyLoss()  # FocalLoss(gamma=2)
+    # criterion = torch.nn.CrossEntropyLoss()  #
+    criterion = FocalLoss(gamma=2)
 
     # 创建模型
     model = Net(args.mode, device, opt)
