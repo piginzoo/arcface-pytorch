@@ -2,11 +2,20 @@ import logging
 logger = logging.getLogger("Ealiy Stop")
 
 class EarlyStop():
+    """
+    github上有个early_stop的设计：https://github.com/Bjarten/early-stopping-pytorch/blob/master/MNIST_Early_Stopping_example.ipynb
+    他的思路是找到train_loss和val_loss的交叉点，就是要stop的地方。
+    我的设计和他不一样，我更谨慎，多存一些checkopoint。
+    只要是比之前的最好，要更好，就保存checkopoint。
+    这个比较的指标，可以是任意的，可以是val_f1，也可以是train_loss。
+    """
+
     BEST = 1
     CONTINUE = 2
     STOP = -1
 
-    def __init__(self,max_retry):
+    def __init__(self,name,max_retry):
+        self.name = name
         self.best_value = -9999999
         self.retry_counter = 0
         self.max_retry= max_retry
